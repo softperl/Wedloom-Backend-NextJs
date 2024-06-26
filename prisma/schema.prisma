@@ -1,0 +1,161 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// *********************
+// Site
+// *********************
+model Site {
+  id      Int      @id @default(0)
+  term    Term?
+  privacy Privacy?
+  refund  Refund?
+}
+
+model Term {
+  id        Int        @id @default(autoincrement())
+  title     String
+  content   String
+  site      Site       @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId    Int        @unique @default(0)
+  status    PostStatus @default(Published)
+  version   Int        @default(1)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+}
+
+model Privacy {
+  id        Int        @id @default(autoincrement())
+  title     String
+  content   String
+  site      Site       @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId    Int        @unique @default(0)
+  status    PostStatus @default(Published)
+  version   Int        @default(1)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+}
+
+model Refund {
+  id        Int        @id @default(autoincrement())
+  title     String
+  content   String
+  site      Site       @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId    Int        @unique @default(1)
+  status    PostStatus @default(Published)
+  version   Int        @default(1)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+}
+
+// *********************
+// Auth
+// *********************
+
+model User {
+  id         String         @id @default(cuid())
+  email      String         @unique
+  provider   AuthProvider[] @default([Email])
+  name       String
+  role       Role           @default(User)
+  phone      String?
+  password   String
+  brand      String?
+  city       String?
+  vendorType String?
+  verified   Boolean        @default(false)
+  sessions   Session[]
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @updatedAt @map("updated_at")
+  posts      Post[]
+  comments   Comment[]
+}
+
+enum Role {
+  User
+  Vendor
+  Admin
+  Super
+}
+
+enum AuthProvider {
+  Email
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  valid     Boolean  @default(true)
+  userAgent String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+// *********************
+// Blog Post
+// *********************
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  posts     Post[]
+  parent    Category?  @relation("ParentChild", fields: [parentId], references: [id], onDelete: Cascade)
+  parentId  String?
+  children  Category[] @relation("ParentChild")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+}
+
+model Post {
+  id            String     @id @default(cuid())
+  title         String
+  slug          String     @unique
+  description   String
+  content       String
+  thumbnail     String?
+  keywords      String[]
+  tags          String[]
+  status        PostStatus @default(Published)
+  isFeatured    Boolean    @default(false)
+  allowComments Boolean    @default(false)
+  user          User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId        String?
+  category      Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId    String
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  comments      Comment[]
+}
+
+enum PostStatus {
+  Published
+  Draft
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  text      String?
+  edited    Boolean   @default(false)
+  parentId  String?
+  postId    String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  parent    Comment?  @relation("ParentChild", fields: [parentId], references: [id], onDelete: Cascade)
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  children  Comment[] @relation("ParentChild")
+
+  @@index([postId, userId])
+}
