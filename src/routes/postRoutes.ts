@@ -6,6 +6,7 @@ import {
   newCategory,
   getAllCategories,
   deleteCategory,
+  getPostBySlug,
 } from "../controllers/postController";
 import requireUser from "../middleware/requireUser";
 import hasRole from "../middleware/hasRole";
@@ -15,6 +16,7 @@ const router = express.Router();
 router
   .route("/post/new")
   .post(requireUser, hasRole(["Admin", "Super"]), newPost);
+router.route("/post/get/:slug").get(getPostBySlug);
 router.route("/post/get-all").get(getAllPosts);
 router
   .route("/category/new")

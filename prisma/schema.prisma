@@ -15,10 +15,85 @@ datasource db {
 // Site
 // *********************
 model Site {
-  id      Int      @id @default(0)
-  term    Term?
-  privacy Privacy?
-  refund  Refund?
+  id               Int              @id @default(0)
+  term             Term?
+  privacy          Privacy?
+  refund           Refund?
+  about            About?
+  socialLink       SocialLink?
+  cities           City[]
+  vendorCategories VendorCategory[]
+  checklists       Checklist[]
+  contactInfo      ContactInfo?
+  map              Map?
+}
+
+model ContactInfo {
+  id        Int      @id @default(autoincrement())
+  email     String
+  location  String
+  phone     String
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId    Int      @unique @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+model Map {
+  id     Int    @id @default(autoincrement())
+  url    String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId Int    @unique @default(0)
+}
+
+model City {
+  id     Int    @id @default(autoincrement())
+  name   String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId Int    @default(0)
+}
+
+model VendorCategory {
+  id     Int    @id @default(autoincrement())
+  name   String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId Int    @default(0)
+}
+
+model Checklist {
+  id     Int    @id @default(autoincrement())
+  name   String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId Int    @default(0)
+}
+
+model SocialLink {
+  id        Int      @id @default(autoincrement())
+  Facebook  String?
+  Twitter   String?
+  Pinterest String?
+  Instagram String?
+  Youtube   String?
+  Linkedin  String?
+  TikTok    String?
+  Reddit    String?
+  Discord   String?
+  WhatsApp  String?
+  Telegram  String?
+  Quora     String?
+  Tumblr    String?
+  Threads   String?
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId    Int      @unique @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+model Menu {
+  id       String @id @default(cuid())
+  title    String @unique
+  href     String
+  subMenus Json?
 }
 
 model Term {
@@ -55,6 +130,22 @@ model Refund {
   version   Int        @default(1)
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
+}
+
+model About {
+  id          Int      @id @default(autoincrement())
+  name        String
+  tagLine     String
+  email       String
+  phone       String
+  content     String?
+  seoTitle    String
+  seoKeyWords String[]
+  description String
+  site        Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId      Int      @unique @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 }
 
 // *********************
@@ -158,4 +249,28 @@ model Comment {
   children  Comment[] @relation("ParentChild")
 
   @@index([postId, userId])
+}
+
+model Contact {
+  id        String          @id @default(cuid())
+  name      String
+  subject   String
+  email     String
+  message   String
+  type      ContactUserType @default(Public)
+  status    ContactStatus   @default(Pending)
+  userId    String?
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+}
+
+enum ContactUserType {
+  User
+  Vendor
+  Public
+}
+
+enum ContactStatus {
+  Pending
+  Resolved
 }

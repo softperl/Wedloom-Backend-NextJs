@@ -21,6 +21,7 @@ import { uploadRoutes } from "./routes/uploadRoutes";
 import { adminAuthRoutes } from "./routes/adminAuthRoutes";
 import { blogRoutes } from "./routes/postRoutes";
 import { siteRoutes } from "./routes/siteRoutes";
+import { contactRoutes } from "./routes/contactRoutes";
 
 app.use(helmet());
 
@@ -57,6 +58,7 @@ app.use("/", uploadRoutes);
 app.use("/auth", authRoutes);
 app.use("/blog", blogRoutes);
 app.use("/site", siteRoutes);
+app.use("/contact", contactRoutes);
 app.use("/admin/auth", adminAuthRoutes);
 app.use(errorHandlerMiddleware);
 app.use(notFoundMiddleware);

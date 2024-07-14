@@ -124,6 +124,34 @@ const getAllPosts = async (req: Request, res: Response) => {
   }
 };
 
+const getPostBySlug = async (req: Request, res: Response) => {
+  const { slug } = req.params;
+  try {
+    const post = await prisma.post.findUnique({
+      where: {
+        slug,
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+        category: {
+          select: {
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+    res.status(StatusCodes.OK).json({ post });
+  } catch (error) {
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
 const newCategory = async (req: Request, res: Response) => {
   try {
     const { name, parentId } = newCategorySchema.parse(req.body);
@@ -174,4 +202,5 @@ export {
   newCategory,
   getAllCategories,
   deleteCategory,
+  getPostBySlug,
 };
