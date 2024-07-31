@@ -28,6 +28,9 @@ import {
   newCheclist,
   getChecklist,
   deleteChecklist,
+  getPlans,
+  deletePlan,
+  newPlan,
 } from "../controllers/siteController";
 import requireUser from "../middleware/requireUser";
 import hasRole from "../middleware/hasRole";
@@ -100,5 +103,13 @@ router.route("/checklist").get(getChecklist);
 router
   .route("/checklist/delete/:listId")
   .delete(requireUser, hasRole(["Admin", "Super"]), deleteChecklist);
+
+router
+  .route("/plans/new")
+  .post(requireUser, hasRole(["Admin", "Super"]), newPlan);
+router.route("/plans").get(getPlans);
+router
+  .route("/plans/delete/:planId")
+  .delete(requireUser, hasRole(["Admin", "Super"]), deletePlan);
 
 export { router as siteRoutes };

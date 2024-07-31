@@ -169,6 +169,8 @@ model User {
   updatedAt  DateTime       @updatedAt @map("updated_at")
   posts      Post[]
   comments   Comment[]
+  Message    Message[]
+  ChatUser   ChatUser[]
 }
 
 enum Role {
@@ -273,4 +275,75 @@ enum ContactUserType {
 enum ContactStatus {
   Pending
   Resolved
+}
+
+// *********************
+// Questions
+// *********************
+model Questions {
+  id         String   @id @default(cuid())
+  name       String
+  label      String?
+  others     String?
+  inputType  String
+  vendorType String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+}
+
+model SubsPlan {
+  id        String   @id @default(cuid())
+  type      PlanType @default(Yearly)
+  price     Float    @default(0)
+  tax       Float    @default(0)
+  name      String
+  feature   String[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+enum PlanType {
+  Monthly
+  Yearly
+}
+
+// *********************
+// Chat
+// *********************
+
+model Message {
+  id             String        @id @default(cuid())
+  text           String
+  conversationId String
+  seen           Boolean       @default(false)
+  status         MessageStatus @default(SENT)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  senderId       String
+  sender         User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model ChatUser {
+  id             String       @id @default(cuid())
+  userId         String
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Conversation {
+  id        String     @id @default(cuid())
+  key       String     @unique
+  deleted   Boolean    @default(false)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  users     ChatUser[]
+  messages  Message[]
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
 }

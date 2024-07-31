@@ -535,7 +535,65 @@ const getSiteData = async (req: Request, res: Response) => {
   }
 };
 
+const newPlan = async (req: Request, res: Response) => {
+  const { type, price, tax, name, feature, id } = req.body;
+  if (!type || !price || !tax || !name || !feature) {
+    throw new BadRequestError("Please provide all fields");
+  }
+  try {
+    const plan = await prisma.subsPlan.upsert({
+      where: { id: id || 0 },
+      create: {
+        type,
+        price,
+        tax,
+        name,
+        feature,
+      },
+      update: {
+        type,
+        price,
+        tax,
+        name,
+        feature,
+      },
+    });
+    res.status(StatusCodes.CREATED).json({ plan });
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
+const deletePlan = async (req: Request, res: Response) => {
+  const { planId } = req.params;
+  try {
+    await prisma.subsPlan.delete({
+      where: {
+        id: planId,
+      },
+    });
+    res.status(StatusCodes.OK).json({ message: "Deleted" });
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
+const getPlans = async (req: Request, res: Response) => {
+  try {
+    const plans = await prisma.subsPlan.findMany();
+    res.status(StatusCodes.OK).json({ plans });
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
 export {
+  getPlans,
+  deletePlan,
+  newPlan,
   newTerms,
   newPrivacy,
   newRefund,

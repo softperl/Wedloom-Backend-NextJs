@@ -6,7 +6,8 @@ dotenv.config();
 import cors from "cors";
 import helmet from "helmet";
 import fileUpload from "express-fileupload";
-import passport from "passport";
+import { createServer } from "http";
+import { Server } from "socket.io";
 // middleware
 import notFoundMiddleware from "./middleware/notFound";
 import errorHandlerMiddleware from "./middleware/errorHandler";
@@ -22,7 +23,11 @@ import { adminAuthRoutes } from "./routes/adminAuthRoutes";
 import { blogRoutes } from "./routes/postRoutes";
 import { siteRoutes } from "./routes/siteRoutes";
 import { contactRoutes } from "./routes/contactRoutes";
+import { questionRoutes } from "./routes/questionRoutes";
+import { chatRoutes } from "./routes/chatRoutes";
 
+const httpServer = createServer(app);
+const io = new Server(httpServer);
 app.use(helmet());
 
 // app.set("trust proxy", true);
@@ -59,6 +64,8 @@ app.use("/auth", authRoutes);
 app.use("/blog", blogRoutes);
 app.use("/site", siteRoutes);
 app.use("/contact", contactRoutes);
+app.use("/question", questionRoutes);
+app.use("/chat", chatRoutes);
 app.use("/admin/auth", adminAuthRoutes);
 app.use(errorHandlerMiddleware);
 app.use(notFoundMiddleware);
@@ -66,7 +73,7 @@ app.use(notFoundMiddleware);
 const port = process.env.PORT || 1337;
 const start = async () => {
   try {
-    const server = app.listen(port, () => {
+    httpServer.listen(port, () => {
       console.log(`Server is listening on port ${port}...`);
     });
     workers.init();
@@ -76,3 +83,4 @@ const start = async () => {
 };
 
 start();
+export { io };
