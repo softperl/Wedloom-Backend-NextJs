@@ -25,9 +25,11 @@ import { siteRoutes } from "./routes/siteRoutes";
 import { contactRoutes } from "./routes/contactRoutes";
 import { questionRoutes } from "./routes/questionRoutes";
 import { chatRoutes } from "./routes/chatRoutes";
+import { eventRoutes } from "./routes/eventRoutes";
+import { vendorRoutes } from "./routes/vendorRoutes";
 
 const httpServer = createServer(app);
-const io = new Server(httpServer);
+const io = new Server(httpServer, { cors: { origin: "*" } });
 app.use(helmet());
 
 // app.set("trust proxy", true);
@@ -67,6 +69,8 @@ app.use("/contact", contactRoutes);
 app.use("/question", questionRoutes);
 app.use("/chat", chatRoutes);
 app.use("/admin/auth", adminAuthRoutes);
+app.use("/event", eventRoutes);
+app.use("/vendor", vendorRoutes);
 app.use(errorHandlerMiddleware);
 app.use(notFoundMiddleware);
 

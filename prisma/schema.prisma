@@ -55,7 +55,7 @@ model City {
 
 model VendorCategory {
   id     Int    @id @default(autoincrement())
-  name   String
+  name   String @unique
   site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
   siteId Int    @default(0)
 }
@@ -153,24 +153,37 @@ model About {
 // *********************
 
 model User {
-  id         String         @id @default(cuid())
-  email      String         @unique
-  provider   AuthProvider[] @default([Email])
-  name       String
-  role       Role           @default(User)
-  phone      String?
-  password   String
-  brand      String?
-  city       String?
-  vendorType String?
-  verified   Boolean        @default(false)
-  sessions   Session[]
-  createdAt  DateTime       @default(now()) @map("created_at")
-  updatedAt  DateTime       @updatedAt @map("updated_at")
-  posts      Post[]
-  comments   Comment[]
-  Message    Message[]
-  ChatUser   ChatUser[]
+  id                String              @id @default(cuid())
+  email             String              @unique
+  provider          AuthProvider[]      @default([Email])
+  name              String
+  role              Role                @default(User)
+  phone             String?
+  password          String
+  brand             String?
+  city              String?
+  vendorType        String?
+  verified          Boolean             @default(false)
+  sessions          Session[]
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  posts             Post[]
+  comments          Comment[]
+  Message           Message[]
+  ChatUser          ChatUser[]
+  favConversations  FavConversation[]
+  Event             Event[]
+  Vendor            Vendor[]
+  vendorCategory    String?
+  VendorProfileInfo VendorProfileInfo[]
+  isApproved        Boolean             @default(false)
+  Banquet           Banquet[]
+  ProjectAlbum      ProjectAlbum[]
+  ProjectPhoto      ProjectPhoto[]
+  ProjectVideo      ProjectVideo[]
+  MenuFiles         FoodMenu[]
+  FoodMenuImage     FoodMenuImage[]
+  Review            Review[]
 }
 
 enum Role {
@@ -249,6 +262,8 @@ model Comment {
   parent    Comment?  @relation("ParentChild", fields: [parentId], references: [id], onDelete: Cascade)
   post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   children  Comment[] @relation("ParentChild")
+  Vendor    Vendor?   @relation(fields: [vendorId], references: [id])
+  vendorId  String?
 
   @@index([postId, userId])
 }
@@ -281,30 +296,59 @@ enum ContactStatus {
 // Questions
 // *********************
 model Questions {
-  id         String   @id @default(cuid())
-  name       String
-  label      String?
-  others     String?
-  inputType  String
-  vendorType String
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id           String       @id @default(cuid())
+  question     String
+  questionType QuestionType
+  vendorType   String
+  inputType    InputType    @default(Text_Number)
+  labelName    String?
+  showLabel    ShowLabel    @default(true)
+  others       Json?
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
 }
 
+enum QuestionType {
+  Short
+  Long
+  Multiple_Choice
+  Radio
+}
+
+enum InputType {
+  Text_Number
+  File
+  Number
+}
+
+enum ShowLabel {
+  true
+  false
+}
+
+// *********************
+// Plan
+// *********************
 model SubsPlan {
-  id        String   @id @default(cuid())
-  type      PlanType @default(Yearly)
-  price     Float    @default(0)
-  tax       Float    @default(0)
+  id        String     @id @default(cuid())
+  type      PlanType   @default(Yearly)
+  price     String
+  tax       String     @default("0")
   name      String
-  feature   String[]
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  features  Json[]
+  status    PlanStatus @default(Active)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
 }
 
 enum PlanType {
   Monthly
   Yearly
+}
+
+enum PlanStatus {
+  Active
+  Inactive
 }
 
 // *********************
@@ -333,17 +377,187 @@ model ChatUser {
 }
 
 model Conversation {
-  id        String     @id @default(cuid())
-  key       String     @unique
-  deleted   Boolean    @default(false)
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
-  users     ChatUser[]
-  messages  Message[]
+  id               String            @id @default(cuid())
+  key              String            @unique
+  deleted          Boolean           @default(false)
+  authorId         String?
+  readByAuthor     Boolean           @default(true)
+  readByReceiver   Boolean           @default(false)
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  users            ChatUser[]
+  messages         Message[]
+  favConversations FavConversation[]
+}
+
+model FavConversation {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now()) @map("created_at")
 }
 
 enum MessageStatus {
   SENT
   DELIVERED
   READ
+}
+
+// *********************
+// Setup-Wedding
+// *********************
+
+model Event {
+  id        String    @id @default(cuid())
+  type      EventType @default(Groom)
+  title     String
+  location  String
+  date      String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+}
+
+enum EventType {
+  Groom
+  Bride
+}
+
+// *********************
+// Vendor-Profile
+// *********************
+
+model Vendor {
+  id            String     @id @default(cuid())
+  thumbnail     String?
+  keywords      String[]
+  tags          String[]
+  status        PostStatus @default(Published)
+  isFeatured    Boolean    @default(false)
+  allowComments Boolean    @default(false)
+  user          User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId        String?
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  comments      Comment[]
+  Review        Review[]
+}
+
+model VendorProfileInfo {
+  id                String   @id @default(cuid())
+  loginEmail        String?
+  brandName         String?
+  categoryName      String?
+  contactPersonName String?
+  additionalMail    String?
+  contactNumber     String[]
+  website           String?
+  facebook          String?
+  instagram         String?
+  youtube           String?
+  addInfo           String?
+  city              String?
+  address           String?
+  additionalData    Json?
+  User              User?    @relation(fields: [userId], references: [id])
+  userId            String?  @unique
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+}
+
+model Step {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+model Banquet {
+  id            String   @id @default(cuid())
+  title         String
+  type          String
+  fixedCapacity String
+  floatCapacity String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+}
+
+model ProjectPhoto {
+  id         String   @id @default(cuid())
+  photo      String
+  isFeatured Boolean  @default(false) @map("is_featured")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  User       User?    @relation(fields: [userId], references: [id])
+  userId     String?
+}
+
+model ProjectAlbum {
+  id        String   @id @default(cuid())
+  name      String
+  photos    Json[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  User      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+}
+
+model ProjectVideo {
+  id        String   @id @default(cuid())
+  video     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  User      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+}
+
+model FoodMenu {
+  id          String       @id @default(cuid())
+  title       String
+  menuType    FoodMenuType
+  price       String
+  starter     String
+  mainCourse  String
+  soupOrSalad String
+  dessert     String
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  User        User?        @relation(fields: [userId], references: [id])
+  userId      String?
+}
+
+enum FoodMenuType {
+  Standard
+  Premium
+  Luxury
+}
+
+model FoodMenuImage {
+  id        String   @id @default(cuid())
+  image     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  User      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+}
+
+//Reviews
+model Review {
+  id               String   @id @default(cuid())
+  isShare          Boolean  @default(false)
+  rating           Float
+  feedback         String
+  feedBackQuestion String
+  reply            String?
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vendorId         String
+  vendor           Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 }

@@ -45,7 +45,7 @@ const uploadFile = async (req: Request, res: Response) => {
   if (!Array.isArray(files)) {
     files = [files];
   }
-  const MAX_FILES = 1;
+  const MAX_FILES = 40;
   const MAX_SIZE = dir == "resume" ? 1024 * 1024 * 2 : 1024 * 1024 * 1;
   const allowedExt = [
     "pdf",

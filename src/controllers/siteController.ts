@@ -420,6 +420,7 @@ const deleteCity = async (req: Request, res: Response) => {
 const newVendorCategory = async (req: Request, res: Response) => {
   try {
     const { name, id } = req.body;
+    console.log("name", name, "id", id);
     await prisma.vendorCategory.upsert({
       where: {
         id: id || 0,
@@ -442,6 +443,22 @@ const getVendorCategories = async (req: Request, res: Response) => {
   try {
     const categories = await prisma.vendorCategory.findMany();
     res.status(StatusCodes.OK).json({ categories });
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
+const getVendorCategoryById = async (req: Request, res: Response) => {
+  try {
+    const userId = res.locals.user.id;
+    const category = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        role: "Vendor",
+      },
+    });
+    res.status(StatusCodes.OK).json(category);
   } catch (error) {
     console.log(error);
     throw new BadRequestError("Something went wrong");
@@ -512,6 +529,7 @@ const deleteChecklist = async (req: Request, res: Response) => {
 const getSiteData = async (req: Request, res: Response) => {
   try {
     const menus = await prisma.menu.findMany();
+    const steps = await prisma.step.findMany();
     const siteData = await prisma.site.findFirst({
       include: {
         about: true,
@@ -527,6 +545,7 @@ const getSiteData = async (req: Request, res: Response) => {
       siteData: {
         ...siteData,
         menus,
+        steps,
       },
     });
   } catch (error) {
@@ -536,8 +555,8 @@ const getSiteData = async (req: Request, res: Response) => {
 };
 
 const newPlan = async (req: Request, res: Response) => {
-  const { type, price, tax, name, feature, id } = req.body;
-  if (!type || !price || !tax || !name || !feature) {
+  const { type, price, tax, name, features, id } = req.body;
+  if (!type || !price || !tax || !name || !features) {
     throw new BadRequestError("Please provide all fields");
   }
   try {
@@ -548,17 +567,34 @@ const newPlan = async (req: Request, res: Response) => {
         price,
         tax,
         name,
-        feature,
+        features,
       },
       update: {
         type,
         price,
         tax,
         name,
-        feature,
+        features,
       },
     });
     res.status(StatusCodes.CREATED).json({ plan });
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
+const changePlanStatus = async (req: Request, res: Response) => {
+  const { id, status } = req.body;
+  if (!id || !status) {
+    throw new BadRequestError("Please provide both id and status");
+  }
+  try {
+    const plan = await prisma.subsPlan.update({
+      where: { id },
+      data: { status },
+    });
+    res.status(StatusCodes.OK).json({ plan });
   } catch (error) {
     console.log(error);
     throw new BadRequestError("Something went wrong");
@@ -590,7 +626,40 @@ const getPlans = async (req: Request, res: Response) => {
   }
 };
 
+const newStep = async (req: Request, res: Response) => {
+  try {
+    const { content, id } = req.body;
+    await prisma.step.upsert({
+      where: {
+        id: id || 0,
+      },
+      create: {
+        content,
+      },
+      update: {
+        content,
+      },
+    });
+    res.status(StatusCodes.OK).json({ message: "Success" });
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
+const getSteps = async (req: Request, res: Response) => {
+  try {
+    const steps = await prisma.step.findMany();
+    res.status(StatusCodes.OK).json({ steps });
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
 export {
+  newStep,
+  getSteps,
   getPlans,
   deletePlan,
   newPlan,
@@ -622,4 +691,5 @@ export {
   newCheclist,
   getChecklist,
   deleteChecklist,
+  getVendorCategoryById,
 };

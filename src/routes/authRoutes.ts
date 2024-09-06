@@ -5,9 +5,10 @@ import {
   renewAccessToken,
   login,
   getRole,
-  register,
+  signUp,
   verify,
   loginAdmin,
+  changePasswordVendor,
 } from "../controllers/authController";
 import requireUser from "../middleware/requireUser";
 
@@ -18,6 +19,7 @@ router.route("/logout").delete(deleteSession);
 router.route("/renew").post(renewAccessToken);
 router.route("/login").post(login);
 router.route("/login-admin").post(loginAdmin);
+router.route("/vendor-changePassword").post(requireUser, changePasswordVendor);
 router.route("/verify/:token").get(verify);
-router.route("/register").post(register);
+router.route("/register").post(signUp);
 export { router as authRoutes };

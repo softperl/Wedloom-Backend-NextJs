@@ -31,6 +31,9 @@ import {
   getPlans,
   deletePlan,
   newPlan,
+  getVendorCategoryById,
+  getSteps,
+  newStep,
 } from "../controllers/siteController";
 import requireUser from "../middleware/requireUser";
 import hasRole from "../middleware/hasRole";
@@ -111,5 +114,16 @@ router.route("/plans").get(getPlans);
 router
   .route("/plans/delete/:planId")
   .delete(requireUser, hasRole(["Admin", "Super"]), deletePlan);
+router
+  .route("/get-category/vendor-id")
+  .get(
+    requireUser,
+    hasRole(["Admin", "Super", "Vendor"]),
+    getVendorCategoryById
+  );
+router
+  .route("/step/new")
+  .post(requireUser, hasRole(["Admin", "Super"]), newStep);
+router.route("/get-all-steps").get(getSteps);
 
 export { router as siteRoutes };

@@ -62,7 +62,7 @@ async function deleteContact(req: Request, res: Response) {
         id: contactId,
       },
     });
-    res.status(StatusCodes.OK).json({ contact });
+    res.status(StatusCodes.OK).json({});
   } catch (error) {
     console.log(error);
     throw new BadRequestError("Something went wrong");

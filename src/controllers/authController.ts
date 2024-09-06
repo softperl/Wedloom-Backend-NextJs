@@ -4,12 +4,16 @@ import { BadRequestError, UnAuthenticatedError } from "../errors";
 import { StatusCodes } from "http-status-codes";
 import { reIssueAccessToken } from "../services/session.service";
 import { signJwt } from "../utils/jwt.utils";
-import { loginSchema, registerSchema } from "../schema/auth.schema";
+import {
+  changePasswordVendorSchema,
+  loginSchema,
+  registerSchema,
+} from "../schema/auth.schema";
 import bc from "bcryptjs";
 import { mailQueue } from "../jobs/queue";
 import jwt from "jsonwebtoken";
 
-async function register(req: Request, res: Response) {
+async function signUp(req: Request, res: Response) {
   try {
     const { name, email, phone, password, brand, city, vendorType, role } =
       registerSchema.parse(req.body);
@@ -176,6 +180,45 @@ async function loginAdmin(req: any, res: Response) {
   }
 }
 
+async function changePasswordVendor(req: Request, res: Response) {
+  try {
+    const { oldPassword, newPassword } = changePasswordVendorSchema.parse(
+      req.body
+    );
+
+    const userId = res.locals.user.id;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new BadRequestError("User not found!");
+    }
+
+    const isPasswordCorrect = await bc.compare(
+      oldPassword,
+      user.password as string
+    );
+
+    if (!isPasswordCorrect) {
+      throw new BadRequestError("Old password is incorrect!");
+    }
+
+    const hashedNewPassword = await bc.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedNewPassword },
+    });
+
+    res.status(StatusCodes.OK).json({ msg: "Password changed successfully" });
+  } catch (error: any) {
+    console.log(error);
+    throw new BadRequestError(error.message || "Something went wrong");
+  }
+}
+
 async function deleteSession(req: Request, res: Response) {
   const sessionId = res.locals.user.session;
   try {
@@ -275,7 +318,8 @@ export {
   getUserSessions,
   login,
   getRole,
-  register,
+  signUp,
   verify,
   loginAdmin,
+  changePasswordVendor,
 };
