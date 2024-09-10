@@ -183,7 +183,7 @@ model User {
   ProjectVideo      ProjectVideo[]
   MenuFiles         FoodMenu[]
   FoodMenuImage     FoodMenuImage[]
-  Review            Review[]
+  reviews           Review[]
 }
 
 enum Role {
@@ -443,7 +443,6 @@ model Vendor {
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
   comments      Comment[]
-  Review        Review[]
 }
 
 model VendorProfileInfo {
@@ -550,14 +549,14 @@ model FoodMenuImage {
 model Review {
   id               String   @id @default(cuid())
   isShare          Boolean  @default(false)
-  rating           Float
+  rating           String
   feedback         String
   feedBackQuestion String
+  photos           String[]
   reply            String?
   userId           String
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   vendorId         String
-  vendor           Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 }
