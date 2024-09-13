@@ -262,8 +262,6 @@ model Comment {
   parent    Comment?  @relation("ParentChild", fields: [parentId], references: [id], onDelete: Cascade)
   post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   children  Comment[] @relation("ParentChild")
-  Vendor    Vendor?   @relation(fields: [vendorId], references: [id])
-  vendorId  String?
 
   @@index([postId, userId])
 }
@@ -431,18 +429,11 @@ enum EventType {
 // *********************
 
 model Vendor {
-  id            String     @id @default(cuid())
-  thumbnail     String?
-  keywords      String[]
-  tags          String[]
-  status        PostStatus @default(Published)
-  isFeatured    Boolean    @default(false)
-  allowComments Boolean    @default(false)
-  user          User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId        String?
-  createdAt     DateTime   @default(now()) @map("created_at")
-  updatedAt     DateTime   @updatedAt @map("updated_at")
-  comments      Comment[]
+  id        String   @id @default(cuid())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 }
 
 model VendorProfileInfo {

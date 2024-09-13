@@ -45,6 +45,17 @@ const createReview = async (req: Request, res: Response) => {
         "You need to have a conversation with the vendor before you can review them"
       );
     }
+    const isVendorReplyMessage = await prisma.message.findFirst({
+      where: {
+        conversationId: isAlreadyConversation.id,
+        senderId: vendorId,
+      },
+    });
+    if (!isVendorReplyMessage) {
+      throw new BadRequestError(
+        "Vendor needs to reply to your message before you can review them"
+      );
+    }
     await prisma.review.create({
       data: {
         vendorId,
@@ -56,10 +67,10 @@ const createReview = async (req: Request, res: Response) => {
         photos,
       },
     });
-    res.status(StatusCodes.OK).json({});
-  } catch (error) {
+    res.status(StatusCodes.OK).json();
+  } catch (error: any) {
     console.log(error);
-    throw new BadRequestError("Something went wrong");
+    throw new BadRequestError(error.message || "Something went wrong");
   }
 };
 
@@ -145,7 +156,8 @@ const getPublicReviews = async (req: Request, res: Response) => {
       },
     });
     if (!isVendor) {
-      throw new BadRequestError("Vendor not found");
+      res.status(StatusCodes.OK).json({ reviews: [] });
+      return;
     }
     const reviews = await prisma.review.findMany({
       where: {

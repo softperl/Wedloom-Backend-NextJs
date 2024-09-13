@@ -1,3 +1,4 @@
+import { get } from "lodash";
 import express from "express";
 import {
   createAlbum,
@@ -12,6 +13,7 @@ import {
   getFoodMenu,
   getProjects,
   getVendorProfileInfo,
+  getVendorsList,
   getVideos,
   makeFeatured,
   removeAlbumById,
@@ -31,6 +33,7 @@ const router = express.Router();
 router.route("/profile-info").post(requireUser, vendorProfileInfo);
 router.route("/get-profile-info").get(requireUser, getVendorProfileInfo);
 router.route("/new-vendor").post(requireUser, hasRole(["Admin"]), createVendor);
+router.route("/list/get-all").get(getVendorsList);
 router
   .route("/banquet/new")
   .post(requireUser, hasRole(["Vendor"]), createBanquet);

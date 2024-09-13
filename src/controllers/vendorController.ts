@@ -80,6 +80,45 @@ const vendorProfileInfo = async (req: Request, res: Response) => {
   }
 };
 
+const getVendorsList = async (req: Request, res: Response) => {
+  try {
+    const vendors = await prisma.user.findMany({
+      where: {
+        role: "Vendor",
+        isApproved: true,
+      },
+    });
+    if (!vendors) {
+      throw new BadRequestError("No vendors found");
+    }
+
+    const vendorsList = await prisma.user.findMany({
+      where: {
+        id: {
+          in: vendors.map((vendor) => vendor.id),
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        city: true,
+        vendorType: true,
+        brand: true,
+        ProjectPhoto: {
+          where: {
+            isFeatured: true,
+          },
+        },
+        reviews: {},
+      },
+    });
+
+    res.status(StatusCodes.OK).json({ vendorsList });
+  } catch (error) {
+    throw new BadRequestError("Something went wrong");
+  }
+};
 const getVendorProfileInfo = async (req: Request, res: Response) => {
   const userId = res.locals.user.id;
   try {
@@ -709,6 +748,7 @@ export {
   vendorProfileInfo,
   getVendorProfileInfo,
   createVendor,
+  getVendorsList,
   createBanquet,
   getBanquet,
   removeBanquet,
