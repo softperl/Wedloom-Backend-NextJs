@@ -110,7 +110,19 @@ const getVendorsList = async (req: Request, res: Response) => {
             isFeatured: true,
           },
         },
-        reviews: {},
+        vendorReviews: {
+          where: {
+            NOT: {
+              feedBackQuestion: "",
+              feedback: "",
+              rating: 0,
+              reply: "",
+            },
+          },
+          select: {
+            rating: true,
+          },
+        },
       },
     });
 
@@ -119,6 +131,95 @@ const getVendorsList = async (req: Request, res: Response) => {
     throw new BadRequestError("Something went wrong");
   }
 };
+
+const getPublicVendorProfileById = async (req: Request, res: Response) => {
+  const { profileId } = req.params;
+  if (!profileId) {
+    throw new BadRequestError("Profile ID is required");
+  }
+  try {
+    const vendorProfile = await prisma.user.findFirst({
+      where: {
+        id: profileId,
+        role: "Vendor",
+        isApproved: true,
+      },
+      select: {
+        id: true,
+        city: true,
+        vendorType: true,
+        brand: true,
+        vendorReviews: {
+          where: {
+            NOT: {
+              feedBackQuestion: "",
+              feedback: "",
+              rating: 0,
+              reply: "",
+            },
+          },
+        },
+        ProjectPhoto: {
+          select: {
+            id: true,
+            photo: true,
+          },
+          take: 4,
+        },
+        ProjectAlbum: {
+          select: {
+            id: true,
+            name: true,
+            photos: true,
+          },
+          take: 4,
+        },
+        ProjectVideo: {
+          select: {
+            id: true,
+            video: true,
+          },
+          take: 4,
+        },
+        Banquet: true,
+        _count: {
+          select: {
+            vendorReviews: {
+              where: {
+                NOT: {
+                  reply: null,
+                },
+              },
+            },
+            ProjectPhoto: true,
+            ProjectAlbum: true,
+            ProjectVideo: true,
+            Banquet: true,
+          },
+        },
+      },
+    });
+
+    const featuredPhoto = await prisma.projectPhoto.findFirst({
+      where: {
+        userId: profileId,
+        isFeatured: true,
+      },
+      select: {
+        id: true,
+        photo: true,
+      },
+    });
+    const vendor = {
+      ...vendorProfile,
+      featuredPhoto,
+    };
+    res.status(StatusCodes.OK).json({ vendor });
+  } catch (error) {
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
 const getVendorProfileInfo = async (req: Request, res: Response) => {
   const userId = res.locals.user.id;
   try {
@@ -744,6 +845,39 @@ const createFoodMenuPhotos = async (req: Request, res: Response) => {
   }
 };
 
+const galleryPhotos = async (req: Request, res: Response) => {
+  const { profileId } = req.params;
+  if (!profileId) {
+    throw new BadRequestError("Vendor ID is required");
+  }
+  try {
+    const gallery = await prisma.projectPhoto.findMany({
+      where: {
+        userId: profileId,
+      },
+      select: {
+        id: true,
+        photo: true,
+        createdAt: true,
+      },
+    });
+
+    const user = await prisma.user.findFirst({
+      where: {
+        id: profileId,
+      },
+      select: {
+        id: true,
+        name: true,
+        vendorType: true,
+      },
+    });
+
+    res.status(StatusCodes.OK).json({ gallery, user });
+  } catch (error) {
+    throw new BadRequestError("Something went wrong");
+  }
+};
 export {
   vendorProfileInfo,
   getVendorProfileInfo,
@@ -768,4 +902,6 @@ export {
   removeFoodMenu,
   uploadRulesFoodMenu,
   createFoodMenuPhotos,
+  getPublicVendorProfileById,
+  galleryPhotos,
 };

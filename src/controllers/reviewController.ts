@@ -126,7 +126,18 @@ const getReviews = async (req: Request, res: Response) => {
         vendorId: userId,
       },
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        vendor: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
@@ -162,9 +173,23 @@ const getPublicReviews = async (req: Request, res: Response) => {
     const reviews = await prisma.review.findMany({
       where: {
         vendorId,
+        NOT: {
+          reply: null,
+        },
       },
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        vendor: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
@@ -175,4 +200,85 @@ const getPublicReviews = async (req: Request, res: Response) => {
   }
 };
 
-export { createReview, reviewReply, getReviews, getPublicReviews };
+const getReviewDistribution = async (req: Request, res: Response) => {
+  const { vendorId } = req.params;
+  try {
+    if (!vendorId) {
+      throw new BadRequestError("Something went wrong");
+    }
+    const isVendor = await prisma.user.findUnique({
+      where: {
+        id: vendorId,
+        role: "Vendor",
+      },
+    });
+    if (!isVendor) {
+      res
+        .status(StatusCodes.OK)
+        .json({ reviews: [], distribution: {}, average: 0 });
+      return;
+    }
+    const reviews = await prisma.review.findMany({
+      where: {
+        vendorId,
+        NOT: {
+          reply: null,
+        },
+      },
+    });
+
+    const lastReview = await prisma.review.findFirst({
+      where: {
+        vendorId,
+        NOT: {
+          reply: null,
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        createdAt: true,
+      },
+    });
+
+    const totalReviews = await prisma.review.count({
+      where: {
+        vendorId,
+        NOT: {
+          reply: null,
+        },
+      },
+    });
+
+    // Calculate review distribution
+    const distribution = reviews.reduce(
+      (acc: Record<number, number>, review) => {
+        acc[review.rating] = (acc[review.rating] || 0) + 1;
+        return acc;
+      },
+      {}
+    );
+
+    // Calculate average review score
+    const totalScore = reviews.reduce((acc, review) => acc + review.rating, 0);
+    const average = reviews.length
+      ? Math.round((totalScore / reviews.length) * 2) / 2
+      : 0;
+
+    res
+      .status(StatusCodes.OK)
+      .json({ totalReviews, distribution, average, lastReview });
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
+export {
+  createReview,
+  reviewReply,
+  getReviews,
+  getPublicReviews,
+  getReviewDistribution,
+};

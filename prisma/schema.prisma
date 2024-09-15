@@ -174,7 +174,6 @@ model User {
   favConversations  FavConversation[]
   Event             Event[]
   Vendor            Vendor[]
-  vendorCategory    String?
   VendorProfileInfo VendorProfileInfo[]
   isApproved        Boolean             @default(false)
   Banquet           Banquet[]
@@ -183,7 +182,8 @@ model User {
   ProjectVideo      ProjectVideo[]
   MenuFiles         FoodMenu[]
   FoodMenuImage     FoodMenuImage[]
-  reviews           Review[]
+  reviews           Review[]            @relation(name: "UserReviews")
+  vendorReviews     Review[]            @relation(name: "VendorReviews")
 }
 
 enum Role {
@@ -540,14 +540,15 @@ model FoodMenuImage {
 model Review {
   id               String   @id @default(cuid())
   isShare          Boolean  @default(false)
-  rating           String
+  rating           Float
   feedback         String
   feedBackQuestion String
   photos           String[]
   reply            String?
   userId           String
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User     @relation(name: "UserReviews", fields: [userId], references: [id], onDelete: Cascade)
   vendorId         String
+  vendor           User     @relation(name: "VendorReviews", fields: [vendorId], references: [id], onDelete: Cascade)
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 }

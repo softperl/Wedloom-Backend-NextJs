@@ -8,10 +8,12 @@ import {
   createProject,
   createVendor,
   createVideo,
+  galleryPhotos,
   getAlbums,
   getBanquet,
   getFoodMenu,
   getProjects,
+  getPublicVendorProfileById,
   getVendorProfileInfo,
   getVendorsList,
   getVideos,
@@ -67,5 +69,7 @@ router
   .route("/upload-image-rules/foodMenu")
   .get(requireUser, uploadRulesFoodMenu);
 router.route("/food-menu-image/new").post(requireUser, createFoodMenuPhotos);
+router.route("/get-vendor-profile/:profileId").get(getPublicVendorProfileById);
+router.route(`/gallery/:profileId`).get(galleryPhotos);
 
 export { router as vendorRoutes };
