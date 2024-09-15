@@ -878,6 +878,66 @@ const galleryPhotos = async (req: Request, res: Response) => {
     throw new BadRequestError("Something went wrong");
   }
 };
+
+const createFaq = async (req: Request, res: Response) => {
+  const userId = res.locals.user.id;
+  const { id, question, answer } = req.body;
+  try {
+    await prisma.faq.upsert({
+      where: {
+        userId,
+        id: id || "0",
+      },
+      update: {
+        question,
+        answer,
+      },
+      create: {
+        userId,
+        question,
+        answer,
+      },
+    });
+    res.status(StatusCodes.OK).json();
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
+const getFaq = async (req: Request, res: Response) => {
+  const { profileId } = req.params;
+  try {
+    const faq = await prisma.faq.findMany({
+      where: {
+        userId: profileId,
+      },
+      select: {
+        id: true,
+        question: true,
+        answer: true,
+      },
+    });
+    res.status(StatusCodes.OK).json({ faq });
+  } catch (error) {
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
+const removeFaq = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    await prisma.faq.delete({
+      where: {
+        id,
+      },
+    });
+    res.status(StatusCodes.OK).json();
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError("Something went wrong");
+  }
+};
 export {
   vendorProfileInfo,
   getVendorProfileInfo,
@@ -904,4 +964,7 @@ export {
   createFoodMenuPhotos,
   getPublicVendorProfileById,
   galleryPhotos,
+  createFaq,
+  getFaq,
+  removeFaq,
 };

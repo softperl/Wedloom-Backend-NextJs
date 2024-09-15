@@ -3,6 +3,7 @@ import express from "express";
 import {
   createAlbum,
   createBanquet,
+  createFaq,
   createFoodMenu,
   createFoodMenuPhotos,
   createProject,
@@ -11,6 +12,7 @@ import {
   galleryPhotos,
   getAlbums,
   getBanquet,
+  getFaq,
   getFoodMenu,
   getProjects,
   getPublicVendorProfileById,
@@ -20,6 +22,7 @@ import {
   makeFeatured,
   removeAlbumById,
   removeBanquet,
+  removeFaq,
   removeFoodMenu,
   removeProjectById,
   removeVideoById,
@@ -71,5 +74,8 @@ router
 router.route("/food-menu-image/new").post(requireUser, createFoodMenuPhotos);
 router.route("/get-vendor-profile/:profileId").get(getPublicVendorProfileById);
 router.route(`/gallery/:profileId`).get(galleryPhotos);
+router.route("/faq/new").post(requireUser, createFaq);
+router.route("/faq/get-all/:profileId").get(getFaq);
+router.route("/faq/delete/:id").delete(requireUser, removeFaq);
 
 export { router as vendorRoutes };
