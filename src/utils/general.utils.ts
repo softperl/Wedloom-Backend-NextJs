@@ -37,3 +37,15 @@ export async function generateUniqueSlug(
 export const getFileExt = (fname: string) => {
   return fname.slice(((fname.lastIndexOf(".") - 1) >>> 0) + 2);
 };
+
+// Calculate average review score
+export const averageReview = (reviews: any) => {
+  const totalScore = reviews.reduce(
+    (acc: any, review: any) => acc + review.rating,
+    0
+  );
+  const average = reviews.length
+    ? Math.round((totalScore / reviews.length) * 2) / 2
+    : 0;
+  return average;
+};

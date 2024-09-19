@@ -3,6 +3,7 @@ import prisma from "@/src/lib/prisma";
 import { BadRequestError, UnAuthenticatedError } from "../errors";
 import { StatusCodes } from "http-status-codes";
 import { Role } from "@prisma/client";
+import { averageReview } from "../utils/general.utils";
 
 const vendorProfileInfo = async (req: Request, res: Response) => {
   const userId = res.locals.user.id;
@@ -92,7 +93,7 @@ const getVendorsList = async (req: Request, res: Response) => {
       throw new BadRequestError("No vendors found");
     }
 
-    const vendorsList = await prisma.user.findMany({
+    const vendorsData = await prisma.user.findMany({
       where: {
         id: {
           in: vendors.map((vendor) => vendor.id),
@@ -101,7 +102,6 @@ const getVendorsList = async (req: Request, res: Response) => {
       select: {
         id: true,
         name: true,
-        email: true,
         city: true,
         vendorType: true,
         brand: true,
@@ -109,21 +109,30 @@ const getVendorsList = async (req: Request, res: Response) => {
           where: {
             isFeatured: true,
           },
+          select: {
+            photo: true,
+          },
         },
         vendorReviews: {
-          where: {
-            NOT: {
-              feedBackQuestion: "",
-              feedback: "",
-              rating: 0,
-              reply: "",
-            },
-          },
           select: {
             rating: true,
           },
         },
+        _count: {
+          select: {
+            vendorReviews: true,
+          },
+        },
       },
+    });
+
+    // Calculate average rating for each vendor
+    const vendorsList = vendorsData.map((vendor) => {
+      const averageRating = averageReview(vendor.vendorReviews);
+      return {
+        ...vendor,
+        averageRating,
+      };
     });
 
     res.status(StatusCodes.OK).json({ vendorsList });
@@ -149,16 +158,7 @@ const getPublicVendorProfileById = async (req: Request, res: Response) => {
         city: true,
         vendorType: true,
         brand: true,
-        vendorReviews: {
-          where: {
-            NOT: {
-              feedBackQuestion: "",
-              feedback: "",
-              rating: 0,
-              reply: "",
-            },
-          },
-        },
+        vendorReviews: true,
         ProjectPhoto: {
           select: {
             id: true,
@@ -184,13 +184,7 @@ const getPublicVendorProfileById = async (req: Request, res: Response) => {
         Banquet: true,
         _count: {
           select: {
-            vendorReviews: {
-              where: {
-                NOT: {
-                  reply: null,
-                },
-              },
-            },
+            vendorReviews: true,
             ProjectPhoto: true,
             ProjectAlbum: true,
             ProjectVideo: true,
@@ -938,6 +932,72 @@ const removeFaq = async (req: Request, res: Response) => {
     throw new BadRequestError("Something went wrong");
   }
 };
+
+const createPackage = async (req: Request, res: Response) => {
+  const userId = res.locals.user.id;
+  const { id, packageName, packagePrice, services } = req.body;
+  if (!id || !packageName || !packagePrice || !services) {
+    throw new BadRequestError("All fields are required");
+  }
+  try {
+    await prisma.package.upsert({
+      where: {
+        userId,
+        id: id || "0",
+      },
+      update: {
+        packageName,
+        packagePrice,
+        services,
+      },
+      create: {
+        userId,
+        packageName,
+        packagePrice,
+        services,
+      },
+    });
+    res.status(StatusCodes.OK).json();
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
+const getPackage = async (req: Request, res: Response) => {
+  const { profileId } = req.params;
+  try {
+    const packages = await prisma.package.findMany({
+      where: {
+        userId: profileId,
+      },
+      select: {
+        id: true,
+        packageName: true,
+        packagePrice: true,
+        services: true,
+      },
+    });
+    res.status(StatusCodes.OK).json({ packages });
+  } catch (error) {
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
+const removePackage = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    await prisma.package.delete({
+      where: {
+        id,
+      },
+    });
+    res.status(StatusCodes.OK).json();
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError("Something went wrong");
+  }
+};
 export {
   vendorProfileInfo,
   getVendorProfileInfo,
@@ -967,4 +1027,7 @@ export {
   createFaq,
   getFaq,
   removeFaq,
+  createPackage,
+  getPackage,
+  removePackage,
 };

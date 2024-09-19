@@ -6,6 +6,7 @@ import {
   createFaq,
   createFoodMenu,
   createFoodMenuPhotos,
+  createPackage,
   createProject,
   createVendor,
   createVideo,
@@ -14,6 +15,7 @@ import {
   getBanquet,
   getFaq,
   getFoodMenu,
+  getPackage,
   getProjects,
   getPublicVendorProfileById,
   getVendorProfileInfo,
@@ -24,6 +26,7 @@ import {
   removeBanquet,
   removeFaq,
   removeFoodMenu,
+  removePackage,
   removeProjectById,
   removeVideoById,
   uploadRulesFoodMenu,
@@ -74,6 +77,9 @@ router
 router.route("/food-menu-image/new").post(requireUser, createFoodMenuPhotos);
 router.route("/get-vendor-profile/:profileId").get(getPublicVendorProfileById);
 router.route(`/gallery/:profileId`).get(galleryPhotos);
+router.route("/package/new").post(requireUser, createPackage);
+router.route("/package/get-all/:profileId").get(getPackage);
+router.route("/package/delete/:id").delete(requireUser, removePackage);
 router.route("/faq/new").post(requireUser, createFaq);
 router.route("/faq/get-all/:profileId").get(getFaq);
 router.route("/faq/delete/:id").delete(requireUser, removeFaq);

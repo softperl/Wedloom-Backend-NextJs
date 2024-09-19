@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import prisma from "@/src/lib/prisma";
 import { BadRequestError, UnAuthenticatedError } from "../errors";
 import { StatusCodes } from "http-status-codes";
+import { averageReview } from "../utils/general.utils";
 
 const createReview = async (req: Request, res: Response) => {
   const userId = res.locals.user.id;
@@ -173,9 +174,6 @@ const getPublicReviews = async (req: Request, res: Response) => {
     const reviews = await prisma.review.findMany({
       where: {
         vendorId,
-        NOT: {
-          reply: null,
-        },
       },
       include: {
         user: {
@@ -221,18 +219,12 @@ const getReviewDistribution = async (req: Request, res: Response) => {
     const reviews = await prisma.review.findMany({
       where: {
         vendorId,
-        NOT: {
-          reply: null,
-        },
       },
     });
 
     const lastReview = await prisma.review.findFirst({
       where: {
         vendorId,
-        NOT: {
-          reply: null,
-        },
       },
       orderBy: {
         createdAt: "desc",
@@ -245,9 +237,6 @@ const getReviewDistribution = async (req: Request, res: Response) => {
     const totalReviews = await prisma.review.count({
       where: {
         vendorId,
-        NOT: {
-          reply: null,
-        },
       },
     });
 
@@ -260,11 +249,7 @@ const getReviewDistribution = async (req: Request, res: Response) => {
       {}
     );
 
-    // Calculate average review score
-    const totalScore = reviews.reduce((acc, review) => acc + review.rating, 0);
-    const average = reviews.length
-      ? Math.round((totalScore / reviews.length) * 2) / 2
-      : 0;
+    const average = averageReview(reviews);
 
     res
       .status(StatusCodes.OK)
