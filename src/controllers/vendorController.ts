@@ -191,6 +191,19 @@ const getPublicVendorProfileById = async (req: Request, res: Response) => {
             Banquet: true,
           },
         },
+        Package: {
+          select: {
+            id: true,
+            packageName: true,
+            packagePrice: true,
+            services: true,
+          },
+        },
+        VendorProfileInfo: {
+          select: {
+            addInfo: true,
+          },
+        },
       },
     });
 
@@ -204,9 +217,19 @@ const getPublicVendorProfileById = async (req: Request, res: Response) => {
         photo: true,
       },
     });
+
+    const reviews = await prisma.review.findMany({
+      where: {
+        vendorId: profileId,
+      },
+    });
+
+    const _averageReview = averageReview(reviews);
+
     const vendor = {
       ...vendorProfile,
       featuredPhoto,
+      _averageReview,
     };
     res.status(StatusCodes.OK).json({ vendor });
   } catch (error) {
@@ -965,7 +988,30 @@ const createPackage = async (req: Request, res: Response) => {
 };
 
 const getPackage = async (req: Request, res: Response) => {
+  const { profileId } = res.locals.user.id;
+  try {
+    const packages = await prisma.package.findMany({
+      where: {
+        userId: profileId,
+      },
+      select: {
+        id: true,
+        packageName: true,
+        packagePrice: true,
+        services: true,
+      },
+    });
+    res.status(StatusCodes.OK).json({ packages });
+  } catch (error) {
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
+const getPublicPackage = async (req: Request, res: Response) => {
   const { profileId } = req.params;
+  if (!profileId) {
+    throw new BadRequestError("Profile ID is required");
+  }
   try {
     const packages = await prisma.package.findMany({
       where: {
@@ -1029,5 +1075,6 @@ export {
   removeFaq,
   createPackage,
   getPackage,
+  getPublicPackage,
   removePackage,
 };
