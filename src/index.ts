@@ -28,6 +28,7 @@ import { chatRoutes } from "./routes/chatRoutes";
 import { eventRoutes } from "./routes/eventRoutes";
 import { vendorRoutes } from "./routes/vendorRoutes";
 import { reviewRoutes } from "./routes/reviewRoutes";
+import { paymentRoutes } from "./routes/paymentRoutes";
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
@@ -73,6 +74,7 @@ app.use("/admin/auth", adminAuthRoutes);
 app.use("/event", eventRoutes);
 app.use("/vendor", vendorRoutes);
 app.use("/review", reviewRoutes);
+app.use("/payment", paymentRoutes);
 app.use(errorHandlerMiddleware);
 app.use(notFoundMiddleware);
 

@@ -186,6 +186,8 @@ model User {
   vendorReviews     Review[]            @relation(name: "VendorReviews")
   faqs              Faq[]
   Package           Package[]
+  payments          Payment[]           @relation(name: "UserPayments")
+  vendorPayments    Payment[]           @relation(name: "VendorPayments")
 }
 
 enum Role {
@@ -574,4 +576,28 @@ model Review {
   vendor           User     @relation(name: "VendorReviews", fields: [vendorId], references: [id], onDelete: Cascade)
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  amount         String
+  currency       String
+  quantity       String
+  packageName    String
+  status         PaymentStatus @default(Pending)
+  customerNumber String
+  customerEmail  String
+  customerName   String
+  userId         String
+  user           User          @relation(name: "UserPayments", fields: [userId], references: [id], onDelete: Cascade)
+  vendorId       String
+  vendor         User          @relation(name: "VendorPayments", fields: [vendorId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+}
+
+enum PaymentStatus {
+  Pending
+  Success
+  Failed
 }
