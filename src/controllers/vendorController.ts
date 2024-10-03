@@ -81,6 +81,46 @@ const vendorProfileInfo = async (req: Request, res: Response) => {
   }
 };
 
+const requestApprovalVendor = async (req: Request, res: Response) => {
+  const userId = res.locals.user.id;
+  try {
+    if (!userId) {
+      throw new BadRequestError("User not found");
+    }
+    const isVendor = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        role: "Vendor",
+      },
+    });
+
+    if (!isVendor) {
+      throw new UnAuthenticatedError("User is not a vendor");
+    }
+
+    const existingApproval = await prisma.approval.findFirst({
+      where: {
+        userId,
+      },
+    });
+
+    if (existingApproval) {
+      throw new BadRequestError("Approval request already sent");
+    }
+
+    await prisma.approval.create({
+      data: {
+        userId,
+        status: "Pending",
+      },
+    });
+
+    res.status(StatusCodes.OK).json({});
+  } catch (error) {
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
 const getVendorsList = async (req: Request, res: Response) => {
   try {
     const vendors = await prisma.user.findMany({
@@ -126,12 +166,28 @@ const getVendorsList = async (req: Request, res: Response) => {
       },
     });
 
+    //Initial Package Price
+    const initialPrice = await prisma.package.findMany({
+      where: {
+        userId: {
+          in: vendorsData.map((vendor) => vendor.id),
+        },
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+      select: {
+        packagePrice: true,
+      },
+    });
+
     // Calculate average rating for each vendor
     const vendorsList = vendorsData.map((vendor) => {
       const averageRating = averageReview(vendor.vendorReviews);
       return {
         ...vendor,
         averageRating,
+        initialPrice: initialPrice[0]?.packagePrice,
       };
     });
 
@@ -1077,4 +1133,5 @@ export {
   getPackage,
   getPublicPackage,
   removePackage,
+  requestApprovalVendor,
 };

@@ -188,6 +188,7 @@ model User {
   Package           Package[]
   payments          Payment[]           @relation(name: "UserPayments")
   vendorPayments    Payment[]           @relation(name: "VendorPayments")
+  Approval          Approval[]
 }
 
 enum Role {
@@ -447,7 +448,7 @@ model VendorProfileInfo {
   categoryName      String?
   contactPersonName String?
   additionalMail    String?
-  contactNumber     String[]
+  contactNumber     Json?
   website           String?
   facebook          String?
   instagram         String?
@@ -600,4 +601,22 @@ enum PaymentStatus {
   Pending
   Success
   Failed
+}
+
+// *********************
+// Approval
+// *********************
+model Approval {
+  id        String         @id @default(cuid())
+  status    ApprovalStatus @default(Pending)
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+}
+
+enum ApprovalStatus {
+  Pending
+  Approved
+  Rejected
 }

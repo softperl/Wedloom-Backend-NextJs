@@ -30,6 +30,7 @@ import {
   removePackage,
   removeProjectById,
   removeVideoById,
+  requestApprovalVendor,
   uploadRulesFoodMenu,
   uploadRulesPortfolio,
   vendorProfileInfo,
@@ -85,5 +86,12 @@ router.route("/package/delete/:id").delete(requireUser, removePackage);
 router.route("/faq/new").post(requireUser, createFaq);
 router.route("/faq/get-all/:profileId").get(getFaq);
 router.route("/faq/delete/:id").delete(requireUser, removeFaq);
+router
+  .route("/request-approval")
+  .post(
+    requireUser,
+    hasRole(["Admin", "Super", "Vendor"]),
+    requestApprovalVendor
+  );
 
 export { router as vendorRoutes };
