@@ -87,11 +87,7 @@ router.route("/faq/new").post(requireUser, createFaq);
 router.route("/faq/get-all/:profileId").get(getFaq);
 router.route("/faq/delete/:id").delete(requireUser, removeFaq);
 router
-  .route("/request-approval")
-  .post(
-    requireUser,
-    hasRole(["Admin", "Super", "Vendor"]),
-    requestApprovalVendor
-  );
+  .route("/request-approval/:userId")
+  .post(requireUser, requestApprovalVendor);
 
 export { router as vendorRoutes };

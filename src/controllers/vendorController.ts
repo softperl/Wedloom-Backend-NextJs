@@ -82,7 +82,7 @@ const vendorProfileInfo = async (req: Request, res: Response) => {
 };
 
 const requestApprovalVendor = async (req: Request, res: Response) => {
-  const userId = res.locals.user.id;
+  const { userId } = req.params;
   try {
     if (!userId) {
       throw new BadRequestError("User not found");
