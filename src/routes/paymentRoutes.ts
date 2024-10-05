@@ -1,9 +1,10 @@
 import express from "express";
 import requireUser from "../middleware/requireUser";
-import { createPayment } from "../controllers/paymentController";
+import { createPayment, submitPayment } from "../controllers/paymentController";
 
 const router = express.Router();
 
-router.route("/new").post(requireUser, createPayment);
+router.route("/create").get(createPayment);
+router.route("/submit").post(submitPayment);
 
 export { router as paymentRoutes };
