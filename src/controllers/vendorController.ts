@@ -4,6 +4,7 @@ import { BadRequestError, UnAuthenticatedError } from "../errors";
 import { StatusCodes } from "http-status-codes";
 import { Role } from "@prisma/client";
 import { averageReview } from "../utils/general.utils";
+import { ApprovalStatus } from "@prisma/client";
 
 const vendorProfileInfo = async (req: Request, res: Response) => {
   const userId = res.locals.user.id;
@@ -82,7 +83,7 @@ const vendorProfileInfo = async (req: Request, res: Response) => {
 };
 
 const requestApprovalVendor = async (req: Request, res: Response) => {
-  const { userId } = req.params;
+  const { userId } = req.body;
   try {
     if (!userId) {
       throw new BadRequestError("User not found");
@@ -116,8 +117,57 @@ const requestApprovalVendor = async (req: Request, res: Response) => {
     });
 
     res.status(StatusCodes.OK).json({});
-  } catch (error) {
-    throw new BadRequestError("Something went wrong");
+  } catch (error: any) {
+    throw new BadRequestError(error.message || "Something went wrong");
+  }
+};
+
+const finalApproval = async (req: Request, res: Response) => {
+  const { userId, status, id } = req.body;
+
+  try {
+    if (!userId) {
+      throw new BadRequestError("User not found");
+    }
+
+    const approval = await prisma.approval.findFirst({
+      where: { userId },
+    });
+
+    if (!approval) {
+      throw new BadRequestError("Approval not found for the user");
+    }
+
+    // Validate the status
+    if (!Object.values(ApprovalStatus).includes(status as ApprovalStatus)) {
+      throw new BadRequestError("Invalid status value");
+    }
+
+    const updatedApproval = await prisma.approval.update({
+      where: {
+        id,
+      },
+      data: {
+        status: status as ApprovalStatus,
+      },
+    });
+
+    // Conditionally update user isApproved field based on status
+    if (status === ApprovalStatus.Approved) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { isApproved: true },
+      });
+    } else {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { isApproved: false },
+      });
+    }
+
+    res.status(StatusCodes.OK).json({ approval: updatedApproval });
+  } catch (error: any) {
+    throw new BadRequestError(error || "Something went wrong");
   }
 };
 
@@ -308,7 +358,13 @@ const getVendorProfileInfo = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(StatusCodes.OK).json({ vendorInfo, vendorProfile });
+    const isApproval = await prisma.approval.findFirst({
+      where: {
+        userId,
+      },
+    });
+
+    res.status(StatusCodes.OK).json({ vendorInfo, vendorProfile, isApproval });
   } catch (error) {
     throw new BadRequestError("Something went wrong");
   }
@@ -1134,4 +1190,5 @@ export {
   getPublicPackage,
   removePackage,
   requestApprovalVendor,
+  finalApproval,
 };

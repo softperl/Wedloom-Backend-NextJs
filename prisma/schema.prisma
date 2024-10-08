@@ -188,7 +188,7 @@ model User {
   Package           Package[]
   payments          Payment[]           @relation(name: "UserPayments")
   vendorPayments    Payment[]           @relation(name: "VendorPayments")
-  Approval          Approval[]
+  approval          Approval[]
 }
 
 enum Role {

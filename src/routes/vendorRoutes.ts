@@ -1,6 +1,7 @@
 import { get } from "lodash";
 import express from "express";
 import {
+  finalApproval,
   createAlbum,
   createBanquet,
   createFaq,
@@ -86,8 +87,7 @@ router.route("/package/delete/:id").delete(requireUser, removePackage);
 router.route("/faq/new").post(requireUser, createFaq);
 router.route("/faq/get-all/:profileId").get(getFaq);
 router.route("/faq/delete/:id").delete(requireUser, removeFaq);
-router
-  .route("/request-approval/:userId")
-  .post(requireUser, requestApprovalVendor);
+router.route("/request-approval").post(requestApprovalVendor);
+router.route("/final-approval").post(requireUser, finalApproval);
 
 export { router as vendorRoutes };
