@@ -13,13 +13,18 @@ export const getAllSchema = z.object({
 });
 
 const getAllUsers = async (req: Request, res: Response) => {
-  const userId = res.locals.user.id;
+  const { role } = req.query;
+
   try {
     let { q, page, perPage, sortBy, sortOrder } = getAllSchema.parse(req.query);
     const offset = (parseInt(`${page}`) - 1) * parseInt(`${perPage}`);
-    let whereCondition = {};
+    let whereCondition: any = {
+      role,
+    };
+
     if (q) {
       whereCondition = {
+        ...whereCondition,
         OR: [
           { name: { contains: q, mode: "insensitive" } },
           { email: { contains: q, mode: "insensitive" } },
@@ -29,10 +34,7 @@ const getAllUsers = async (req: Request, res: Response) => {
 
     const [users, totalCount] = await Promise.all([
       prisma.user.findMany({
-        where: {
-          ...whereCondition,
-        },
-
+        where: whereCondition,
         skip: offset,
         take: parseInt(`${perPage}`),
         orderBy: {
@@ -41,20 +43,19 @@ const getAllUsers = async (req: Request, res: Response) => {
       }),
 
       prisma.user.count({
-        where: {
-          ...whereCondition,
-        },
+        where: whereCondition,
       }),
     ]);
+
     const totalPages = Math.ceil(totalCount / parseInt(`${perPage}`));
     res.status(StatusCodes.OK).json({
       users,
       total: totalCount,
       totalPages,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.log(error);
-    throw new BadRequestError("Something went wrong");
+    throw new BadRequestError(error || "Something went wrong");
   }
 };
 

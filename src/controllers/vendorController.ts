@@ -5,6 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import { Role } from "@prisma/client";
 import { averageReview } from "../utils/general.utils";
 import { ApprovalStatus } from "@prisma/client";
+import { getAllSchema } from "./adminAuthController";
 
 const vendorProfileInfo = async (req: Request, res: Response) => {
   const userId = res.locals.user.id;
@@ -143,7 +144,7 @@ const finalApproval = async (req: Request, res: Response) => {
       throw new BadRequestError("Invalid status value");
     }
 
-    const updatedApproval = await prisma.approval.update({
+    await prisma.approval.update({
       where: {
         id,
       },
@@ -158,66 +159,186 @@ const finalApproval = async (req: Request, res: Response) => {
         where: { id: userId },
         data: { isApproved: true },
       });
-    } else {
+    } else if (status === ApprovalStatus.Rejected) {
       await prisma.user.update({
         where: { id: userId },
         data: { isApproved: false },
       });
     }
 
-    res.status(StatusCodes.OK).json({ approval: updatedApproval });
+    // Delete approval list if status is Approved or Rejected
+    if (
+      status === ApprovalStatus.Approved ||
+      status === ApprovalStatus.Rejected
+    ) {
+      await prisma.approval.deleteMany({
+        where: { userId },
+      });
+    }
+
+    res.status(StatusCodes.OK).json({});
   } catch (error: any) {
-    throw new BadRequestError(error || "Something went wrong");
+    throw new BadRequestError(error.message || "Something went wrong");
+  }
+};
+
+const approvalByUserId = async (req: Request, res: Response) => {
+  const { userId, status } = req.body;
+  try {
+    const approval = await prisma.approval.findFirst({
+      where: { userId },
+    });
+
+    if (status === ApprovalStatus.Approved) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { isApproved: true },
+      });
+    } else if (status === ApprovalStatus.Rejected) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { isApproved: false },
+      });
+    }
+    res.status(StatusCodes.OK).json({ approval });
+  } catch (error: any) {
+    throw new BadRequestError(error.message || "Something went wrong");
+  }
+};
+
+const getApproval = async (req: Request, res: Response) => {
+  try {
+    let { q, page, perPage, sortBy, sortOrder } = getAllSchema.parse(req.query);
+    const offset = (parseInt(`${page}`) - 1) * parseInt(`${perPage}`);
+
+    // Define the search query for 'username' if 'q' is provided
+    const searchQuery: any = q
+      ? {
+          user: {
+            username: {
+              contains: q as string, // Search by username
+              mode: "insensitive", // Case-insensitive search
+            },
+          },
+        }
+      : {};
+
+    const [approvals, totalCount] = await Promise.all([
+      prisma.approval.findMany({
+        where: searchQuery, // Apply the search query if it exists
+        skip: offset,
+        take: parseInt(`${perPage}`),
+        orderBy: {
+          createdAt: sortOrder === "asc" ? "asc" : "desc",
+        },
+        include: {
+          user: { select: { name: true } },
+        },
+      }),
+
+      prisma.approval.count({
+        where: searchQuery, // Apply the search query to the count as well
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / parseInt(`${perPage}`));
+
+    res.status(StatusCodes.OK).json({
+      approvals,
+      total: totalCount,
+      totalPages,
+    });
+  } catch (error: any) {
+    throw new BadRequestError(error.message || "Something went wrong");
   }
 };
 
 const getVendorsList = async (req: Request, res: Response) => {
   try {
-    const vendors = await prisma.user.findMany({
-      where: {
-        role: "Vendor",
-        isApproved: true,
-      },
-    });
-    if (!vendors) {
-      throw new BadRequestError("No vendors found");
+    const { vendorCity, vendorType } = req.params;
+    let {
+      q = "",
+      page,
+      perPage,
+      sortBy,
+      sortOrder,
+    } = getAllSchema.parse(req.query);
+    const offset = (parseInt(`${page}`) - 1) * parseInt(`${perPage}`);
+
+    if (!vendorType) {
+      throw new BadRequestError("Vendor type is required");
     }
 
-    const vendorsData = await prisma.user.findMany({
-      where: {
-        id: {
-          in: vendors.map((vendor) => vendor.id),
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-        city: true,
-        vendorType: true,
-        brand: true,
-        ProjectPhoto: {
-          where: {
-            isFeatured: true,
-          },
-          select: {
-            photo: true,
-          },
-        },
-        vendorReviews: {
-          select: {
-            rating: true,
-          },
-        },
-        _count: {
-          select: {
-            vendorReviews: true,
-          },
-        },
-      },
-    });
+    let whereCondition: any = {
+      role: "Vendor",
+      isApproved: true,
+      vendorType: vendorType,
+      city: vendorCity,
+    };
 
-    //Initial Package Price
-    const initialPrice = await prisma.package.findMany({
+    // Use case-insensitive matching for vendorType
+    whereCondition.vendorType = {
+      equals: vendorType,
+      mode: "insensitive",
+    };
+
+    // Filter by vendorCity if it's not 'all', using case-insensitive matching
+    if (vendorCity && vendorCity.toLowerCase() !== "all") {
+      whereCondition.city = {
+        equals: vendorCity,
+        mode: "insensitive",
+      };
+    }
+
+    // Handle search query
+    if (q.trim() !== "") {
+      whereCondition.OR = [
+        { name: { contains: q, mode: "insensitive" } },
+        // { brand: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    const [vendorsData, totalCount] = await Promise.all([
+      prisma.user.findMany({
+        where: whereCondition,
+        skip: offset,
+        take: parseInt(`${perPage}`),
+        orderBy: {
+          [sortBy]: sortOrder,
+        },
+        select: {
+          id: true,
+          name: true,
+          city: true,
+          vendorType: true,
+          brand: true,
+          ProjectPhoto: {
+            where: {
+              isFeatured: true,
+            },
+            select: {
+              photo: true,
+            },
+          },
+          vendorReviews: {
+            select: {
+              rating: true,
+            },
+          },
+          _count: {
+            select: {
+              vendorReviews: true,
+            },
+          },
+        },
+      }),
+      prisma.user.count({
+        where: whereCondition,
+      }),
+    ]);
+
+    // Initial Package Price
+    const initialPrices = await prisma.package.findMany({
       where: {
         userId: {
           in: vendorsData.map((vendor) => vendor.id),
@@ -227,23 +348,39 @@ const getVendorsList = async (req: Request, res: Response) => {
         createdAt: "asc",
       },
       select: {
+        userId: true,
         packagePrice: true,
       },
     });
 
-    // Calculate average rating for each vendor
+    // Create a map of user IDs to their initial package prices
+    const initialPriceMap = new Map(
+      initialPrices.map((price) => [price.userId, price.packagePrice])
+    );
+
+    // Calculate average rating for each vendor and add initial price
     const vendorsList = vendorsData.map((vendor) => {
       const averageRating = averageReview(vendor.vendorReviews);
       return {
         ...vendor,
         averageRating,
-        initialPrice: initialPrice[0]?.packagePrice,
+        initialPrice: initialPriceMap.get(vendor.id) || null,
       };
     });
 
-    res.status(StatusCodes.OK).json({ vendorsList });
-  } catch (error) {
-    throw new BadRequestError("Something went wrong");
+    const totalPages = Math.ceil(totalCount / parseInt(`${perPage}`));
+
+    res.status(StatusCodes.OK).json({
+      vendorsList,
+      total: totalCount,
+      totalPages,
+    });
+  } catch (error: any) {
+    console.error(error);
+    if (error instanceof BadRequestError) {
+      throw error;
+    }
+    throw new BadRequestError(error || "Something went wrong");
   }
 };
 
@@ -1191,4 +1328,6 @@ export {
   removePackage,
   requestApprovalVendor,
   finalApproval,
+  getApproval,
+  approvalByUserId,
 };
