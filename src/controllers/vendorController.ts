@@ -1293,6 +1293,52 @@ const removePackage = async (req: Request, res: Response) => {
     throw new BadRequestError("Something went wrong");
   }
 };
+
+const adminViewProfile = async (req: Request, res: Response) => {
+  const { vendorId } = req.params;
+  if (!vendorId) {
+    throw new BadRequestError("Profile ID is required");
+  }
+  try {
+    const vendorProfile = await prisma.user.findFirst({
+      where: {
+        id: vendorId,
+        role: "Vendor",
+      },
+    });
+    const vendorInfo = await prisma.vendorProfileInfo.findFirst({
+      where: {
+        userId: vendorId,
+      },
+    });
+
+    const isApproval = await prisma.approval.findFirst({
+      where: {
+        userId: vendorId,
+      },
+    });
+
+    const projects = await prisma.projectPhoto.findMany({
+      where: {
+        userId: vendorId,
+      },
+    });
+
+    const featured = await prisma.projectPhoto.findFirst({
+      where: {
+        userId: vendorId,
+        isFeatured: true,
+      },
+    });
+
+    res
+      .status(StatusCodes.OK)
+      .json({ vendorInfo, vendorProfile, isApproval, projects, featured });
+  } catch (error: any) {
+    console.log(error);
+    throw new BadRequestError(error);
+  }
+};
 export {
   vendorProfileInfo,
   getVendorProfileInfo,
@@ -1330,4 +1376,5 @@ export {
   finalApproval,
   getApproval,
   approvalByUserId,
+  adminViewProfile,
 };

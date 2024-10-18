@@ -37,6 +37,7 @@ import {
   vendorProfileInfo,
   getApproval,
   approvalByUserId,
+  adminViewProfile,
 } from "../controllers/vendorController";
 import hasRole from "../middleware/hasRole";
 import requireUser from "../middleware/requireUser";
@@ -93,5 +94,8 @@ router.route("/request-approval").post(requestApprovalVendor);
 router.route("/final-approval").post(requireUser, finalApproval);
 router.route("/approval-userId").post(requireUser, approvalByUserId);
 router.route("/approval-get-all").get(requireUser, getApproval);
+router
+  .route("/admin/get-profile-info/:vendorId")
+  .get(hasRole(["Admin", "Super"]), adminViewProfile);
 
 export { router as vendorRoutes };
