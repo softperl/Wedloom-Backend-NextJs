@@ -38,6 +38,11 @@ import {
   getApproval,
   approvalByUserId,
   adminViewProfile,
+  getFoodMenuAdmin,
+  getBanquetAdmin,
+  getProjectsAdmin,
+  getAlbumsAdmin,
+  getVideosAdmin,
 } from "../controllers/vendorController";
 import hasRole from "../middleware/hasRole";
 import requireUser from "../middleware/requireUser";
@@ -52,9 +57,13 @@ router
   .route("/banquet/new")
   .post(requireUser, hasRole(["Vendor"]), createBanquet);
 router.route("/get-all-banquet").get(requireUser, getBanquet);
+router.route("/get-all-banquet/:userId").get(requireUser, getBanquetAdmin);
 router.route("/banquet/delete/:banquetId").delete(requireUser, removeBanquet);
 router.route("/project-image/new").post(requireUser, createProject);
 router.route("/project-image/get-all").get(requireUser, getProjects);
+router
+  .route("/project-image/get-all/:userId")
+  .get(requireUser, getProjectsAdmin);
 router
   .route("/project-image/featured/:projectId")
   .post(requireUser, makeFeatured);
@@ -63,16 +72,19 @@ router
   .delete(requireUser, removeProjectById);
 router.route("/project-album/new").post(requireUser, createAlbum);
 router.route("/project-album/get-all").get(requireUser, getAlbums);
+router.route("/project-album/get-all/:userId").get(requireUser, getAlbumsAdmin);
 router
   .route("/project-album/delete/:albumId")
   .delete(requireUser, removeAlbumById);
 router.route("/project-video/new").post(requireUser, createVideo);
 router.route("/project-video/get-all").get(requireUser, getVideos);
+router.route("/project-video/get-all/:userId").get(requireUser, getVideosAdmin);
 router
   .route("/project-video/delete/:videoId")
   .delete(requireUser, removeVideoById);
 router.route("/food-menu/new").post(requireUser, createFoodMenu);
 router.route("/food-menu/get-all").get(requireUser, getFoodMenu);
+router.route("/food-menu/get-all/:userId").get(requireUser, getFoodMenuAdmin);
 router.route("/food-menu/delete/:menuId").delete(requireUser, removeFoodMenu);
 router
   .route("/upload-image-rules/portfolio")
