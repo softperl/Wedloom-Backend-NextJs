@@ -32,7 +32,14 @@ import { paymentRoutes } from "./routes/paymentRoutes";
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, { cors: { origin: "*" } });
-app.use(helmet());
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      formAction: ["'self'", "https://ipguat.apps.net.pk"],
+    },
+  })
+);
 
 // app.set("trust proxy", true);
 app.use(

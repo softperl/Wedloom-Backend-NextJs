@@ -20,14 +20,19 @@ const createPayment = async (req: Request, res: Response) => {
       return;
     }
     const basket_id = Math.floor(Math.random() * Math.floor(100));
-    var html = getHtml(
-      token,
-      merchant_id!,
-      `CART-NO-${basket_id}`,
-      "2020-05-25"
-    );
-    res.writeHead(200, { "Content-Type": "text/html" });
-    res.end(html);
+
+    // var html = getHtml(
+    //   token,
+    //   merchant_id!,
+    //   `CART-NO-${basket_id}`,
+    //   "2020-05-25"
+    // );
+    // res.writeHead(200, { "Content-Type": "text/html" });
+    // res.end(html);
+
+    res
+      .status(StatusCodes.OK)
+      .json({ token, basket_id: `CART-NO-${basket_id}`, merchant_id });
   } catch (error) {
     console.log(error);
     throw new BadRequestError("Something went wrong");
@@ -36,21 +41,9 @@ const createPayment = async (req: Request, res: Response) => {
 
 const submitPayment = async (req: Request, res: Response) => {
   try {
-    const { formData } = req.body; // Assuming form data is being sent as JSON
-    console.log(formData, "formData");
-
     const response = await axios.post(
       "https://ipguat.apps.net.pk/Ecommerce/api/Transaction/PostTransaction",
-      {
-        TOKEN: process.env.PAYFAST_TOKEN,
-        PROCCODE: "00",
-        TXNAMT: "10",
-        CUSTOMER_MOBILE_NO: "+92300000000",
-        CUSTOMER_EMAIL_ADDRESS: "email@example.com",
-        SIGNATURE: "RANDOMSTRINGVALUE",
-        MERCHANT_NAME: "My Merchant",
-        MERCHANT_ID: process.env.MERCHANTID,
-      },
+      req.body,
       {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -58,7 +51,8 @@ const submitPayment = async (req: Request, res: Response) => {
       }
     );
 
-    res.status(StatusCodes.OK).json({ success: true, data: response.data });
+    res.writeHead(200, { "Content-Type": "text/html" });
+    res.end(response.data);
   } catch (error) {
     console.error(error);
     res
@@ -89,66 +83,26 @@ function getHtml(
                           PayFast Web Checkout - Example Code
                       </div>
                       <!-- Submit form to your own backend API, which will proxy the request -->
-                      <form method="post" action="/payment/submit"> 
-                          <div class="row">
-                              <div class="col-lg-6">
-                                  <div class="form-group">
-                                      <label>Merchant ID</label>
-                                      <input class="form-control" type="text" name="MERCHANT_ID" value="${merchant_id}">
-                                  </div>
-                              </div>
-                              <div class="col-lg-6">
-                                  <div class="form-group">
-                                      <label>Merchant Name</label>
-                                      <input class="form-control" type="text" name="MERCHANT_NAME" value="My Merchant">
-                                  </div>
-                              </div>
-                          </div>
-                          <div class="row">
-                              <div class="col-lg-6">
-                                  <div class="form-group">
-                                      <label>Token</label>
-                                      <input class="form-control" type="text" name="TOKEN" value="${token}">
-                                  </div>
-                              </div>
-                              <div class="col-lg-6">
-                                  <div class="form-group">
-                                      <label>Proccode</label>
-                                      <input readonly="readonly" class="form-control" type="text" name="PROCCODE" value="00">
-                                  </div>
-                              </div>
-                          </div>
-                          <div class="row">
-                              <div class="col-lg-6">
-                                  <div class="form-group">
-                                      <label>Amount</label>
-                                      <input class="form-control" type="text" name="TXNAMT" value="10">
-                                  </div>
-                              </div>
-                              <div class="col-lg-6">
-                                  <div class="form-group">
-                                      <label>Customer Mobile Number</label>
-                                      <input class="form-control" type="text" name="CUSTOMER_MOBILE_NO" value="+92300000000">
-                                  </div>
-                              </div>
-                          </div>
-                          <div class="row">
-                              <div class="col-lg-6">
-                                  <div class="form-group">
-                                      <label>Customer Email</label>
-                                      <input class="form-control" type="text" name="CUSTOMER_EMAIL_ADDRESS" value="email@example.com">
-                                  </div>
-                              </div>
-                              <div class="col-lg-6">
-                                  <div class="form-group">
-                                      <label>Signature</label>
-                                      <input class="form-control" type="text" name="SIGNATURE" value="RANDOMSTRINGVALUE">
-                                  </div>
-                              </div>
-                          </div>
-                          <div class="form-group">
-                              <input class="btn btn-primary" type="submit" value="PAY NOW"> 
-                          </div>
+                      <form method="post" action="https://ipguat.apps.net.pk/Ecommerce/api/Transaction/PostTransaction"> 
+                          Currency Code: <input type="text" name="CURRENCY_CODE" value="PKR" /><br />
+      Merchant ID: <input type="text" name="MERCHANT_ID" value="${merchant_id}" /><br />
+      Token: <input type="text" name="TOKEN" value="${token}" /><br />
+      Success URL: <input type="text" name="SUCCESS_URL" value="http://localhost:1337" /><br />
+      Failure URL: <input type="text" name="FAILURE_URL" value="http://localhost:1337" /><br />
+      Checkout URL: <input type="text" name="CHECKOUT_URL" value="https://typedwebhook.tools/webhook/cfe4e40e-8c5c-4d5b-867a-017bce41070c" /><br />
+      Customer Email: <input type="text" name="CUSTOMER_EMAIL_ADDRESS" value="some-email@example.com" /><br />
+      Customer Mobile: <input type="text" name="CUSTOMER_MOBILE_NO" value="323232332" /><br />
+      Transaction Amount: <input type="text" name="TXNAMT" value="" /><br />
+      Basket ID: <input type="text" name="BASKET_ID" value="${basket_id}" /><br />
+      Transaction Date: <input type="text" name="ORDER_DATE" value="${new Date().toISOString()}" /><br />
+      Signature: <input type="text" name="SIGNATURE" value="SOME-RANDOM-STRING" /><br />
+      Version: <input type="text" name="VERSION" value="MERCHANT-CART-0.1" /><br />
+      Item Description: <input type="text" name="TXNDESC" value="Item Purchased from Cart" /><br />
+      Proccode: <input type="text" name="PROCCODE" value="00" /><br />
+      Transaction Type: <input type="text" name="TRAN_TYPE" value='ECOMM_PURCHASE' /><br />
+      Store ID/Terminal ID (optional): <input type="text" name="STORE_ID" value='' /><br />
+      Recurring Transaction: <input type="checkbox" id="RECURRING_TXN" name="RECURRING_TXN" value="true"><br />
+      <input type="submit" value="SUBMIT" />
                       </form> 
                   </div>
               </div>
