@@ -595,6 +595,19 @@ const getBanquet = async (req: Request, res: Response) => {
     throw new BadRequestError("Something went wrong");
   }
 };
+const getBanquetAdmin = async (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  try {
+    const banquet = await prisma.banquet.findMany({
+      where: {
+        userId,
+      },
+    });
+    res.status(StatusCodes.OK).json({ banquet });
+  } catch (error) {
+    throw new BadRequestError("Something went wrong");
+  }
+};
 
 const removeBanquet = async (req: Request, res: Response) => {
   const userId = res.locals.user.id;
@@ -670,6 +683,26 @@ const createProject = async (req: Request, res: Response) => {
 
 const getProjects = async (req: Request, res: Response) => {
   const userId = res.locals.user.id;
+  try {
+    const projects = await prisma.projectPhoto.findMany({
+      where: {
+        userId,
+      },
+    });
+
+    const featured = await prisma.projectPhoto.findFirst({
+      where: {
+        userId,
+        isFeatured: true,
+      },
+    });
+    res.status(StatusCodes.OK).json({ projects, featured });
+  } catch (error) {
+    throw new BadRequestError("Something went wrong");
+  }
+};
+const getProjectsAdmin = async (req: Request, res: Response) => {
+  const userId = req.params.userId;
   try {
     const projects = await prisma.projectPhoto.findMany({
       where: {
@@ -872,6 +905,19 @@ const getAlbums = async (req: Request, res: Response) => {
     throw new BadRequestError("Something went wrong");
   }
 };
+const getAlbumsAdmin = async (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  try {
+    const albums = await prisma.projectAlbum.findMany({
+      where: {
+        userId,
+      },
+    });
+    res.status(StatusCodes.OK).json({ albums });
+  } catch (error) {
+    throw new BadRequestError("Something went wrong");
+  }
+};
 
 const createVideo = async (req: Request, res: Response) => {
   const userId = res.locals.user.id;
@@ -917,6 +963,19 @@ const createVideo = async (req: Request, res: Response) => {
 };
 const getVideos = async (req: Request, res: Response) => {
   const userId = res.locals.user.id;
+  try {
+    const videos = await prisma.projectVideo.findMany({
+      where: {
+        userId,
+      },
+    });
+    res.status(StatusCodes.OK).json({ videos });
+  } catch (error) {
+    throw new BadRequestError("Something went wrong");
+  }
+};
+const getVideosAdmin = async (req: Request, res: Response) => {
+  const userId = req.params.userId;
   try {
     const videos = await prisma.projectVideo.findMany({
       where: {
@@ -1010,6 +1069,20 @@ const createFoodMenu = async (req: Request, res: Response) => {
 
 const getFoodMenu = async (req: Request, res: Response) => {
   const userId = res.locals.user.id;
+  try {
+    const foodMenu = await prisma.foodMenu.findMany({
+      where: {
+        userId,
+      },
+    });
+    res.status(StatusCodes.OK).json({ foodMenu });
+  } catch (error) {
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
+const getFoodMenuAdmin = async (req: Request, res: Response) => {
+  const userId = req.params.userId || res.locals.user.id;
   try {
     const foodMenu = await prisma.foodMenu.findMany({
       where: {
@@ -1377,4 +1450,9 @@ export {
   getApproval,
   approvalByUserId,
   adminViewProfile,
+  getFoodMenuAdmin,
+  getBanquetAdmin,
+  getProjectsAdmin,
+  getAlbumsAdmin,
+  getVideosAdmin,
 };

@@ -154,6 +154,45 @@ const getReviews = async (req: Request, res: Response) => {
     throw new BadRequestError("Something went wrong");
   }
 };
+const getReviewsAdmin = async (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  try {
+    if (!userId) {
+      throw new BadRequestError("User not found");
+    }
+
+    const reviews = await prisma.review.findMany({
+      where: {
+        vendorId: userId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        vendor: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    const reviewsCount = await prisma.review.count({
+      where: {
+        vendorId: userId,
+      },
+    });
+
+    res.status(StatusCodes.OK).json({ reviews, reviewsCount });
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError("Something went wrong");
+  }
+};
 
 const getPublicReviews = async (req: Request, res: Response) => {
   const { vendorId } = req.params;
@@ -266,4 +305,5 @@ export {
   getReviews,
   getPublicReviews,
   getReviewDistribution,
+  getReviewsAdmin,
 };
