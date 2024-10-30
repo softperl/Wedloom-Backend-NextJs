@@ -54,10 +54,11 @@ model City {
 }
 
 model VendorCategory {
-  id     Int    @id @default(autoincrement())
-  name   String @unique
-  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  siteId Int    @default(0)
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  photo  String?
+  site   Site    @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  siteId Int     @default(0)
 }
 
 model Checklist {
@@ -99,7 +100,7 @@ model Menu {
 model Term {
   id        Int        @id @default(autoincrement())
   title     String
-  content   String
+  content   Json?
   site      Site       @relation(fields: [siteId], references: [id], onDelete: Cascade)
   siteId    Int        @unique @default(0)
   status    PostStatus @default(Published)
@@ -111,7 +112,7 @@ model Term {
 model Privacy {
   id        Int        @id @default(autoincrement())
   title     String
-  content   String
+  content   Json?
   site      Site       @relation(fields: [siteId], references: [id], onDelete: Cascade)
   siteId    Int        @unique @default(0)
   status    PostStatus @default(Published)
@@ -123,7 +124,7 @@ model Privacy {
 model Refund {
   id        Int        @id @default(autoincrement())
   title     String
-  content   String
+  content   Json?
   site      Site       @relation(fields: [siteId], references: [id], onDelete: Cascade)
   siteId    Int        @unique @default(1)
   status    PostStatus @default(Published)
@@ -189,6 +190,7 @@ model User {
   payments          Payment[]           @relation(name: "UserPayments")
   vendorPayments    Payment[]           @relation(name: "VendorPayments")
   approval          Approval[]
+  isFeatured        Boolean             @default(false)
 }
 
 enum Role {

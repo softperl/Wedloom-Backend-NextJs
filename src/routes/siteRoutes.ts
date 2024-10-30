@@ -34,6 +34,7 @@ import {
   getVendorCategoryById,
   getSteps,
   newStep,
+  getVendorsFeatured,
 } from "../controllers/siteController";
 import requireUser from "../middleware/requireUser";
 import hasRole from "../middleware/hasRole";
@@ -125,5 +126,7 @@ router
   .route("/step/new")
   .post(requireUser, hasRole(["Admin", "Super"]), newStep);
 router.route("/get-all-steps").get(getSteps);
+
+router.route("/vendors/get-all-featured").get(getVendorsFeatured);
 
 export { router as siteRoutes };

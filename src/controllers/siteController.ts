@@ -3,10 +3,11 @@ import prisma from "@/src/lib/prisma";
 import { BadRequestError, UnAuthenticatedError } from "../errors";
 import { StatusCodes } from "http-status-codes";
 import { aboutSchema, newLegalSchema } from "../schema/site.schema";
+import { averageReview } from "../utils/general.utils";
 
 const newTerms = async (req: Request, res: Response) => {
   try {
-    const data = newLegalSchema.parse(req.body);
+    const data = req.body;
     const terms = await prisma.term.upsert({
       where: {
         id: data.id || 0,
@@ -27,12 +28,13 @@ const newTerms = async (req: Request, res: Response) => {
   } catch (error) {
     console.log(error);
     throw new BadRequestError("Something went wrong");
+    ``;
   }
 };
 
 const newPrivacy = async (req: Request, res: Response) => {
   try {
-    const data = newLegalSchema.parse(req.body);
+    const data = req.body;
     const terms = await prisma.privacy.upsert({
       where: {
         id: data.id || 0,
@@ -58,7 +60,7 @@ const newPrivacy = async (req: Request, res: Response) => {
 
 const newRefund = async (req: Request, res: Response) => {
   try {
-    const data = newLegalSchema.parse(req.body);
+    const data = req.body;
     const terms = await prisma.refund.upsert({
       where: {
         id: data.id || 0,
@@ -419,17 +421,18 @@ const deleteCity = async (req: Request, res: Response) => {
 
 const newVendorCategory = async (req: Request, res: Response) => {
   try {
-    const { name, id } = req.body;
-    console.log("name", name, "id", id);
+    const { name, id, photo } = req.body;
     await prisma.vendorCategory.upsert({
       where: {
         id: id || 0,
       },
       create: {
         name,
+        photo,
       },
       update: {
         name,
+        photo,
       },
     });
     res.status(StatusCodes.OK).json({ message: "Updated" });
@@ -657,6 +660,72 @@ const getSteps = async (req: Request, res: Response) => {
   }
 };
 
+const getVendorsFeatured = async (req: Request, res: Response) => {
+  try {
+    const vendorsData = await prisma.user.findMany({
+      where: {
+        role: "Vendor",
+        isFeatured: true,
+      },
+      select: {
+        id: true,
+        vendorType: true,
+        city: true,
+        brand: true,
+        vendorReviews: {
+          select: {
+            rating: true,
+          },
+        },
+        ProjectPhoto: {
+          where: {
+            isFeatured: true,
+          },
+          select: {
+            photo: true,
+          },
+        },
+      },
+    });
+
+    // Initial Package Price
+    const initialPrices = await prisma.package.findMany({
+      where: {
+        userId: {
+          in: vendorsData.map((vendor) => vendor.id),
+        },
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+      select: {
+        userId: true,
+        packagePrice: true,
+      },
+    });
+
+    // Create a map of user IDs to their initial package prices
+    const initialPriceMap = new Map(
+      initialPrices.map((price) => [price.userId, price.packagePrice])
+    );
+
+    // Calculate average rating for each vendor and add initial price
+    const featured = vendorsData.map((vendor) => {
+      const averageRating = averageReview(vendor.vendorReviews);
+      return {
+        ...vendor,
+        averageRating,
+        initialPrice: initialPriceMap.get(vendor.id) || null,
+      };
+    });
+
+    res.status(StatusCodes.OK).json({ featured });
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
 export {
   newStep,
   getSteps,
@@ -692,4 +761,5 @@ export {
   getChecklist,
   deleteChecklist,
   getVendorCategoryById,
+  getVendorsFeatured,
 };

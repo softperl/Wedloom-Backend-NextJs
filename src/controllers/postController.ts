@@ -195,6 +195,18 @@ const deleteCategory = async (req: Request, res: Response) => {
   }
 };
 
+const newEmailAlert = async (req: Request, res: Response) => {
+  const { email } = req.params;
+  try {
+    await mailQueue.add("email-alerts", {
+      email,
+    });
+    res.status(StatusCodes.OK).json({});
+  } catch (error) {
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
 export {
   newPost,
   deletePost,
@@ -203,4 +215,5 @@ export {
   getAllCategories,
   deleteCategory,
   getPostBySlug,
+  newEmailAlert,
 };

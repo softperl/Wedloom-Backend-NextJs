@@ -7,6 +7,7 @@ import {
   getAllCategories,
   deleteCategory,
   getPostBySlug,
+  newEmailAlert,
 } from "../controllers/postController";
 import requireUser from "../middleware/requireUser";
 import hasRole from "../middleware/hasRole";
@@ -28,5 +29,6 @@ router
 router
   .route("/category/delete/:categoryId")
   .delete(requireUser, hasRole(["Admin", "Super"]), deleteCategory);
+router.route("/email-alerts/:email").post(newEmailAlert);
 
 export { router as blogRoutes };
