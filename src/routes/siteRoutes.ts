@@ -35,6 +35,8 @@ import {
   getSteps,
   newStep,
   getVendorsFeatured,
+  newFooterMenu,
+  getFooterMenu,
 } from "../controllers/siteController";
 import requireUser from "../middleware/requireUser";
 import hasRole from "../middleware/hasRole";
@@ -74,6 +76,11 @@ router.route("/menus").get(getMenus);
 router
   .route("/menu/delete/:menuId")
   .delete(requireUser, hasRole(["Admin", "Super"]), deleteMenu);
+
+router
+  .route("/menu-footer/new")
+  .post(requireUser, hasRole(["Admin", "Super"]), newFooterMenu);
+router.route("/menus-footer").get(getFooterMenu);
 
 router
   .route("/social-links/new")

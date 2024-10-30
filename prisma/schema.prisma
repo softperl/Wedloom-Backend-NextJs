@@ -91,10 +91,13 @@ model SocialLink {
 }
 
 model Menu {
-  id       String @id @default(cuid())
-  title    String @unique
-  href     String
-  subMenus Json?
+  id    String @id @default(cuid())
+  menus Json?
+}
+
+model FooterMenu {
+  id    String @id @default(cuid())
+  menus Json?
 }
 
 model Term {

@@ -207,20 +207,35 @@ const getAbout = async (req: Request, res: Response) => {
 
 const newMenu = async (req: Request, res: Response) => {
   try {
-    const { title, href, subMenus } = req.body;
-    const menu = await prisma.menu.upsert({
+    const { id, menus } = req.body;
+    await prisma.menu.upsert({
       where: {
-        title,
+        id,
       },
       create: {
-        title,
-        href,
-        subMenus,
+        menus,
       },
       update: {
-        ...(title && { title }),
-        ...(href && { href }),
-        ...(subMenus && { subMenus }),
+        ...(menus && { menus }),
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError("Something went wrong");
+  }
+};
+const newFooterMenu = async (req: Request, res: Response) => {
+  try {
+    const { id, menus } = req.body;
+    await prisma.footerMenu.upsert({
+      where: {
+        id,
+      },
+      create: {
+        menus,
+      },
+      update: {
+        ...(menus && { menus }),
       },
     });
   } catch (error) {
@@ -232,6 +247,15 @@ const newMenu = async (req: Request, res: Response) => {
 const getMenus = async (req: Request, res: Response) => {
   try {
     const menus = await prisma.menu.findMany();
+    res.status(StatusCodes.OK).json({ menus });
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError("Something went wrong");
+  }
+};
+const getFooterMenu = async (req: Request, res: Response) => {
+  try {
+    const menus = await prisma.footerMenu.findMany();
     res.status(StatusCodes.OK).json({ menus });
   } catch (error) {
     console.log(error);
@@ -531,7 +555,16 @@ const deleteChecklist = async (req: Request, res: Response) => {
 
 const getSiteData = async (req: Request, res: Response) => {
   try {
-    const menus = await prisma.menu.findMany();
+    const menus = await prisma.menu.findMany({
+      select: {
+        menus: true,
+      },
+    });
+    const footerMenu = await prisma.footerMenu.findMany({
+      select: {
+        menus: true,
+      },
+    });
     const steps = await prisma.step.findMany();
     const siteData = await prisma.site.findFirst({
       include: {
@@ -547,6 +580,7 @@ const getSiteData = async (req: Request, res: Response) => {
     res.status(StatusCodes.OK).json({
       siteData: {
         ...siteData,
+        footerMenu,
         menus,
         steps,
       },
@@ -744,6 +778,8 @@ export {
   newAbout,
   getAbout,
   newMenu,
+  newFooterMenu,
+  getFooterMenu,
   getMenus,
   deleteMenu,
   newSocialLinks,
