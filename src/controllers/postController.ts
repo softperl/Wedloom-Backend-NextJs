@@ -128,10 +128,11 @@ const getAllPosts = async (req: Request, res: Response) => {
 
 const getPostBySlug = async (req: Request, res: Response) => {
   const { id } = req.params;
+  console.log(id);
   try {
     const post = await prisma.post.findUnique({
       where: {
-        id,
+        slug: id,
       },
       include: {
         user: {
@@ -148,6 +149,7 @@ const getPostBySlug = async (req: Request, res: Response) => {
         },
       },
     });
+    console.log(post);
     res.status(StatusCodes.OK).json({ post });
   } catch (error) {
     throw new BadRequestError("Something went wrong");
@@ -156,12 +158,13 @@ const getPostBySlug = async (req: Request, res: Response) => {
 
 const newCategory = async (req: Request, res: Response) => {
   try {
-    const { name, parentId } = newCategorySchema.parse(req.body);
+    const { name, parentId, photo } = newCategorySchema.parse(req.body);
     const slug = await generateUniqueSlug(name, "category");
     const category = await prisma.category.create({
       data: {
         name,
         slug,
+        photo,
         parentId: parentId || null,
       },
     });

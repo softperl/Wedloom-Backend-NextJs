@@ -19,6 +19,7 @@ const newPostSchema = z.object({
 const newCategorySchema = z.object({
   name: z.string().max(128),
   parentId: z.string().max(64).optional(),
+  photo: z.string().optional(),
 });
 
 export { newPostSchema, newCategorySchema };
