@@ -6,29 +6,34 @@ import { mailQueue } from "../jobs/queue";
 import { newCategorySchema, newPostSchema } from "../schema/post.schema";
 import { getAllSchema } from "./adminAuthController";
 import { generateUniqueSlug } from "../utils/general.utils";
+import { nanoid } from "nanoid";
 
 const newPost = async (req: Request, res: Response) => {
   const userId = res.locals.user.id;
+  const data = req.body;
+
+  const tags = Array.isArray(data.tags) ? data.tags : [];
+
   try {
-    const data = newPostSchema.parse(req.body);
-    const slug = await generateUniqueSlug(data.title, "post");
-    const post = await prisma.post.upsert({
+    const slug = nanoid();
+    await prisma.post.upsert({
       where: {
         id: data.id || "0",
       },
       create: {
-        title: data.title,
-        slug,
-        content: data.content,
-        description: data.description,
-        isFeatured: data.isFeatured,
-        status: data.status,
         userId,
-        thumbnail: data.thumbnail,
-        keywords: data.keywords,
-        allowComments: data.allowComments,
-        tags: data.tags,
+        title: data.title,
         categoryId: data.categoryId,
+        description: data.description,
+        keywords: data?.keywords,
+        tags,
+        status: data.status,
+        authorId: data.authorId,
+        isFeatured: data.isFeatured,
+        allowComments: data.allowComments,
+        thumbnail: data.thumbnail,
+        content: data.content,
+        slug,
       },
       update: {
         ...(data.title && { title: data.title }),
@@ -38,10 +43,7 @@ const newPost = async (req: Request, res: Response) => {
         ...(data.status && { status: data.status }),
         ...(data.thumbnail && { thumbnail: data.thumbnail }),
         ...(data.keywords && { keywords: data.keywords }),
-        ...(data.allowComments !== undefined && {
-          allowComments: data.allowComments,
-        }),
-        ...(data.tags && { tags: data.tags }),
+        ...(tags && { tags }),
         ...(data.categoryId && { categoryId: data.categoryId }),
       },
     });
@@ -125,11 +127,11 @@ const getAllPosts = async (req: Request, res: Response) => {
 };
 
 const getPostBySlug = async (req: Request, res: Response) => {
-  const { slug } = req.params;
+  const { id } = req.params;
   try {
     const post = await prisma.post.findUnique({
       where: {
-        slug,
+        id,
       },
       include: {
         user: {
@@ -141,7 +143,7 @@ const getPostBySlug = async (req: Request, res: Response) => {
         category: {
           select: {
             name: true,
-            slug: true,
+            id: true,
           },
         },
       },
@@ -195,11 +197,54 @@ const deleteCategory = async (req: Request, res: Response) => {
   }
 };
 
+const newAuthor = async (req: Request, res: Response) => {
+  try {
+    const { name, slug } = req.body;
+    await prisma.author.create({
+      data: {
+        name,
+        slug,
+      },
+    });
+    res.status(StatusCodes.CREATED).json({});
+  } catch (error) {
+    console.log(error);
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
+const getAllAuthor = async (req: Request, res: Response) => {
+  try {
+    const authors = await prisma.author.findMany();
+    res.status(StatusCodes.OK).json({ authors });
+  } catch (error) {
+    console.log(error);
+
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
+const deleteAuthor = async (req: Request, res: Response) => {
+  const { authorId } = req.params;
+  try {
+    await prisma.category.delete({
+      where: {
+        id: authorId,
+      },
+    });
+    res.status(StatusCodes.OK).json({});
+  } catch (error) {
+    throw new BadRequestError("Something went wrong");
+  }
+};
+
 const newEmailAlert = async (req: Request, res: Response) => {
   const { email } = req.params;
   try {
-    await mailQueue.add("email-alerts", {
-      email,
+    await prisma.emailAlert.create({
+      data: {
+        email,
+      },
     });
     res.status(StatusCodes.OK).json({});
   } catch (error) {
@@ -214,6 +259,9 @@ export {
   newCategory,
   getAllCategories,
   deleteCategory,
+  newAuthor,
+  getAllAuthor,
+  deleteAuthor,
   getPostBySlug,
   newEmailAlert,
 };

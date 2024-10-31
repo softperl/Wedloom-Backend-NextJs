@@ -233,14 +233,23 @@ model Category {
   updatedAt DateTime   @updatedAt @map("updated_at")
 }
 
+model Author {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String
+  posts     Post[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
 model Post {
   id            String     @id @default(cuid())
   title         String
-  slug          String     @unique
+  slug          String
   description   String
-  content       String
+  content       Json?
   thumbnail     String?
-  keywords      String[]
+  keywords      Json?
   tags          String[]
   status        PostStatus @default(Published)
   isFeatured    Boolean    @default(false)
@@ -252,6 +261,8 @@ model Post {
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
   comments      Comment[]
+  Author        Author?    @relation(fields: [authorId], references: [id])
+  authorId      String?
 }
 
 enum PostStatus {
@@ -298,6 +309,13 @@ enum ContactUserType {
 enum ContactStatus {
   Pending
   Resolved
+}
+
+model EmailAlert {
+  id        String   @id @default(cuid())
+  email     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 }
 
 // *********************
